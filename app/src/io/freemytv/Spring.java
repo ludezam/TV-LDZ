@@ -35,6 +35,14 @@ final class Spring {
         return true;
     }
 
+    /** Instant navigation still reports the changed frame so cached layers are redrawn once. */
+    boolean step(float dt, boolean animate) {
+        if (animate) return step(dt);
+        boolean changed = value != target || velocity != 0;
+        snap(target);
+        return changed;
+    }
+
     boolean settled() {
         return Math.abs(value - target) < 0.0008f && Math.abs(velocity) < 0.004f;
     }

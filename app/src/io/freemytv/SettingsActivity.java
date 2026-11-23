@@ -109,6 +109,16 @@ public class SettingsActivity extends Activity {
         super.onDestroy();
     }
 
+    /** Closing our settings returns to our home, rather than the last video app behind this task. */
+    private void returnHome() {
+        if (view != null && view.freeActive()) SystemSettingsActivity.returnHome(this);
+        finish();
+    }
+
+    @Override public void onBackPressed() {
+        returnHome();
+    }
+
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
         if (preview != null) {
             // Like the real screensaver: arrows, OK or Back close it (other keys go on to the system); with Watch from the
@@ -166,7 +176,10 @@ public class SettingsActivity extends Activity {
         private final Scene scene = new Scene();
         private final Handler handler = new Handler(Looper.getMainLooper());
         private final Spring[] pop = new Spring[12];
-        private final Spring[] categoryPop = new Spring[5];
+        private static final int OTHER_APPS = 5;
+        private final Spring[] categoryPop = new Spring[6];
+        private final Bitmap[] companionIcons = new Bitmap[3];
+        private boolean companionIconsLoaded;
         private final List<String> appPkgs = new ArrayList<>(), appLabels = new ArrayList<>();
         // The list picker (the app of a remote button): what it shows, which one is in use, where we are.
         private final List<String> pickLabels = new ArrayList<>();
@@ -198,7 +211,7 @@ public class SettingsActivity extends Activity {
         private final android.graphics.Path brandStarLarge = new android.graphics.Path();
         private final android.graphics.Path brandStarSmall = new android.graphics.Path();
         private Paint brandBasePaint, brandGlowPaint, brandSweepPaint, brandSweepEdgePaint;
-        private Paint brandTvGlowPaint, brandTvBodyPaint, brandTvRimPaint, brandScreenPaint;
+        private Paint brandTvBodyPaint, brandTvRimPaint, brandScreenPaint;
         private Paint brandScreenRimPaint, brandScreenGlintPaint, brandStarPaint, brandFootPaint;
         private Paint keyHeading;
         // Continue Watching apps: {package, name}, null until the background scan is done; hidden items when opened.
@@ -334,13 +347,14 @@ public class SettingsActivity extends Activity {
                 case MAIN_INFO: return Ui.tr("Back");
                 case HOME_CHOICE: {
                     String name = row == 0 ? "TV LDZ, " + Ui.tr("Full glass effects and animations")
-                            : row == 1 ? "TV LDZ Fast, " + Ui.tr("Flat glass and lighter effects")
+                            : row == 1 ? "TV LDZ Fast, " + Ui.tr("Black background, flat glass and no animations")
                             : Ui.tr("Original") + ", " + Ui.tr("the TV's factory home screen");
                     boolean inUse = row == 2 ? !freeActive() : freeActive() && Prefs.fastMode() == (row == 1);
                     return name + (inUse ? Ui.tr(". In use") : "") + ", " + Ui.trf("{i} of {n}", "i", row + 1, "n", 3);
                 }
                 case HOME_SETTINGS: {
                     if (settingsCategoriesFocused) return settingCategoryLabels()[row];
+                    if (settingsCategory == OTHER_APPS) return CompanionApps.APPS[row].name + ", " + CompanionApps.label(row);
                     int[] rows = settingsRows(settingsCategory);
                     int at = pickScroll + row;
                     if (at >= rows.length) return "";
@@ -414,8 +428,8 @@ public class SettingsActivity extends Activity {
                     float x = SETTINGS_RAIL_X, y = SETTINGS_CATEGORY_TOP + row * SETTINGS_CATEGORY_PITCH;
                     focusBox.set(x * k, y * k, (x + SETTINGS_RAIL_W) * k, (y + SETTINGS_ROW_H) * k);
                 } else {
-                    float y = SETTINGS_ROW_TOP + row * SETTINGS_ROW_PITCH;
-                    focusBox.set(LIST_X * k, y * k, LIST_R * k, (y + SETTINGS_ROW_H) * k);
+                    float y = SETTINGS_ROW_TOP + row * (settingsCategory == OTHER_APPS ? 184 : SETTINGS_ROW_PITCH);
+                    focusBox.set(LIST_X * k, y * k, LIST_R * k, (y + (settingsCategory == OTHER_APPS ? 164 : SETTINGS_ROW_H)) * k);
                 }
                 return focusBox;
             } else if (screen == HOME_CHOICE) {
@@ -444,7 +458,8 @@ public class SettingsActivity extends Activity {
             lastNanos = 0;
             handler.post(poll);
             if (watchGrantPending) handler.postDelayed(askWatch, WATCH_GRANT_MS);
-            Choreographer.getInstance().postFrameCallback(this);
+            if (Prefs.fastMode()) Choreographer.getInstance().postFrameCallbackDelayed(this, 1000);
+            else Choreographer.getInstance().postFrameCallback(this);
             spoken.readAgain();
             Photos.importInbox(getContext(), this::invalidate);   // photos a computer just sent
         }
@@ -479,7 +494,8 @@ public class SettingsActivity extends Activity {
             for (Spring s : pop) moving |= !s.settled();
             for (Spring s : categoryPop) moving |= !s.settled();
             if (moving || screen != HOME_SETTINGS && SystemClock.uptimeMillis() - lastSky >= 100) invalidate();
-            Choreographer.getInstance().postFrameCallback(this);
+            if (Prefs.fastMode()) Choreographer.getInstance().postFrameCallbackDelayed(this, 1000);
+            else Choreographer.getInstance().postFrameCallback(this);
         }
 
         @Override protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
@@ -535,7 +551,6 @@ public class SettingsActivity extends Activity {
             brandSweepEdgePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             brandSweepEdgePaint.setStyle(Paint.Style.STROKE);
             brandSweepEdgePaint.setStrokeWidth(1.4f * k);
-            brandTvGlowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             brandTvBodyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             brandTvRimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             brandTvRimPaint.setStyle(Paint.Style.STROKE);
@@ -556,8 +571,6 @@ public class SettingsActivity extends Activity {
                     android.graphics.Shader.TileMode.CLAMP));
             brandGlowPaint.setShader(new android.graphics.RadialGradient(210 * k, 320 * k, 360 * k,
                     new int[]{0x6631CFFF, 0x24158CFF, 0x00051A48}, null, android.graphics.Shader.TileMode.CLAMP));
-            brandTvGlowPaint.setShader(new android.graphics.RadialGradient(260 * k, 320 * k, 178 * k,
-                    new int[]{0xA32EDFFF, 0x4930BFFF, 0x00052C88}, null, android.graphics.Shader.TileMode.CLAMP));
             brandTvBodyPaint.setShader(new android.graphics.LinearGradient(130 * k, 250 * k, 390 * k, 390 * k,
                     new int[]{0xB33CBAFF, 0xCC0D4DAB, 0xCC092D75}, null,
                     android.graphics.Shader.TileMode.CLAMP));
@@ -649,8 +662,6 @@ public class SettingsActivity extends Activity {
             brandTvRect.set(cx - 112 * k, top, cx + 112 * k, 376 * k);
             brandScreenRect.set(brandTvRect.left + 10 * k, brandTvRect.top + 10 * k,
                     brandTvRect.right - 10 * k, brandTvRect.bottom - 10 * k);
-            c.drawRoundRect(cx - 150 * k, top - 32 * k, cx + 150 * k, 414 * k,
-                    110 * k, 110 * k, brandTvGlowPaint);
 
             // Two short side feet, drawn as strokes so they remain crisp at different TV resolutions.
             brandFootLeft.reset();
@@ -737,7 +748,7 @@ public class SettingsActivity extends Activity {
                 case MAIN: return 9;
                 case MAIN_INFO: return 1;
                 case HOME_CHOICE: return 3;
-                case HOME_SETTINGS: return settingsCategoriesFocused ? settingCategoryLabels().length
+                case HOME_SETTINGS: return settingsCategoriesFocused ? settingCategoryLabels().length : settingsCategory == OTHER_APPS ? 3
                         : Math.min(PICK_VISIBLE, Math.max(0, settingsRows(settingsCategory).length - pickScroll));
                 case THUMB_PICKER: return thumbnailForSaver ? 7 : 5;
                 case PICKER: return Math.min(PICK_VISIBLE, pickLabels.size());
@@ -757,11 +768,11 @@ public class SettingsActivity extends Activity {
             lastNanos = now;
             for (int i = 0; i < pop.length; i++) {
                 pop[i].target = !settingsCategoriesFocused && i == focus && i < rowCount() ? 1 : 0;
-                pop[i].step(dt);
+                pop[i].step(dt, !Prefs.fastMode());
             }
             for (int i = 0; i < categoryPop.length; i++) {
                 categoryPop[i].target = screen == HOME_SETTINGS && settingsCategoriesFocused && i == focus ? 1 : 0;
-                categoryPop[i].step(dt);
+                categoryPop[i].step(dt, !Prefs.fastMode());
             }
             long up = SystemClock.uptimeMillis();
             float seconds = (up - startedAt) / 1000f;
@@ -769,7 +780,7 @@ public class SettingsActivity extends Activity {
                 c.drawColor(0xFF081728);
                 drawSettingsShell(c);
             } else {
-                if (up - lastSky >= 100) {
+                if (up - lastSky >= 100 && !Prefs.fastMode()) {
                     lastSky = up;
                     scene.advance(seconds);
                 }
@@ -890,7 +901,56 @@ public class SettingsActivity extends Activity {
         }
 
         private String categorySymbol(int category) {
-            return new String[] {"home", "sunny", "speaker", "cloud", "settings"}[category];
+            return new String[] {"home", "sunny", "speaker", "cloud", "settings", "apps"}[category];
+        }
+
+        private void drawCompanionCards(Canvas c) {
+            if (!companionIconsLoaded) {
+                companionIconsLoaded = true;
+                for (int i = 0; i < companionIcons.length; i++) {
+                    String path = "companion/" + CompanionApps.APPS[i].art + ".png";
+                    try {
+                        android.graphics.BitmapFactory.Options options = new android.graphics.BitmapFactory.Options();
+                        options.inJustDecodeBounds = true;
+                        try (java.io.InputStream input = getContext().getAssets().open(path)) {
+                            android.graphics.BitmapFactory.decodeStream(input, null, options);
+                        }
+                        options.inSampleSize = 1;
+                        while (options.outWidth / (options.inSampleSize * 2) >= 220 * k) options.inSampleSize *= 2;
+                        options.inJustDecodeBounds = false;
+                        try (java.io.InputStream input = getContext().getAssets().open(path)) {
+                            companionIcons[i] = android.graphics.BitmapFactory.decodeStream(input, null, options);
+                        }
+                    } catch (IOException | RuntimeException e) { AppLog.w("companion icon: " + e); }
+                }
+            }
+            Paint artwork = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+            Paint name = Ui.text(Ui.semibold, 28 * k, 0xFFFFFFFF);
+            Paint detail = Ui.text(Ui.medium, 21 * k, 0xFFB3C6DD);
+            for (int i = 0; i < CompanionApps.APPS.length; i++) {
+                float top = (SETTINGS_ROW_TOP + i * 184) * k;
+                rowRect.set(LIST_X * k, top, LIST_R * k, top + 164 * k);
+                boolean focused = !settingsCategoriesFocused && focus == i;
+                shellPaint.setColor(focused ? 0xFFE7F3FA : 0xB31B344F);
+                c.drawRoundRect(rowRect, 20 * k, 20 * k, shellPaint);
+                tmp.set(rowRect.left + 16 * k, rowRect.top + 20 * k, rowRect.left + 236 * k, rowRect.bottom - 20 * k);
+                if (companionIcons[i] != null) {
+                    int save = c.save();
+                    android.graphics.Path clip = new android.graphics.Path();
+                    clip.addRoundRect(tmp, 12 * k, 12 * k, android.graphics.Path.Direction.CW);
+                    c.clipPath(clip);
+                    c.drawBitmap(companionIcons[i], null, tmp, artwork);
+                    c.restoreToCount(save);
+                } else Symbols.draw(getContext(), c, "apps", tmp.centerX(), tmp.centerY(), 56 * k, 0xFF79CFC9);
+                name.setColor(focused ? INK : 0xFFFFFFFF);
+                detail.setColor(focused ? 0xFF40566B : 0xFFB3C6DD);
+                float x = rowRect.left + 260 * k;
+                c.drawText(CompanionApps.APPS[i].name, x, rowRect.top + 57 * k, name);
+                c.drawText("GitHub · ludezam/" + CompanionApps.APPS[i].repo, x, rowRect.top + 91 * k, detail);
+                detail.setColor(focused ? 0xFF12394D : 0xFF85DBD1);
+                c.drawText(TextUtils.ellipsize(CompanionApps.label(i), new TextPaint(detail), 535 * k,
+                        TextUtils.TruncateAt.END).toString(), x, rowRect.top + 130 * k, detail);
+            }
         }
 
         private void drawHomeSettingsSidebar(Canvas c) {
@@ -943,6 +1003,11 @@ public class SettingsActivity extends Activity {
             c.drawText(categories[settingsCategory], rightX, 270 * k, keyHeading);
             keyHeading.setTextSize(34 * k);
             c.drawLine(rightX, 288 * k, LIST_R * k, 288 * k, dividerPaint);
+            if (settingsCategory == OTHER_APPS) {
+                drawCompanionCards(c);
+                c.drawText(Ui.tr("← categories  ·  ↑ ↓ apps  ·  OK downloads or installs"), rightX, h - 135 * k, settingsHint);
+                return;
+            }
             int[] rows = settingsRows(settingsCategory);
             int from = Math.min(pickScroll, Math.max(0, rows.length - 1));
             int count = Math.min(PICK_VISIBLE, Math.max(0, rows.length - from));
@@ -1008,46 +1073,44 @@ public class SettingsActivity extends Activity {
             return f;
         }
 
-        private static final String[][] INFO_PERFORMANCE = {
-                {"Open with the Home button", "homeMs", "Time to open the home screen after pressing Home."},
-                {"First home image", "launchMs", "Time until the first image of the home screen appears."}};
-        private static final String[][] INFO_FLUIDITY = {
-                {"Average time per frame", "avgFrameMs", "Less time usually means smoother navigation."},
-                {"Delayed frames", "jankPct", "Share of frames that took too long. Lower is better."},
-                {"TV free memory", "memAvailableMB", "Available RAM when measured; varies with open apps."}};
+        private static final String[][] INFO_ROWS = {
+                {"Open with the Home button", "homeMs"},
+                {"First home image", "launchMs"},
+                {"Average time per frame", "avgFrameMs"},
+                {"Delayed frames", "jankPct"},
+                {"TV free memory", "memAvailableMB"}};
 
-        /** Both groups fit above Back; no submenu or background measurements are added. */
+        /** One compact table: aligned columns and a single explanation below it. */
         private void drawComparison(Canvas c) {
             float x = (LIST_X + 30) * k;
-            c.drawText(Ui.tr("Latest measurements, taken at different times."), x, 210 * k, infoDescription);
+            c.drawText(Ui.tr("Latest recorded values for each mode."), x, 216 * k, infoDescription);
             JSONObject metrics = state.optJSONObject("metrics");
             JSONObject[] modes = {metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL),
                     metrics == null ? null : metrics.optJSONObject(HomeMode.FREE),
                     metrics == null ? null : metrics.optJSONObject("fast")};
-            drawInfoSection(c, "PERFORMANCE", 270, INFO_PERFORMANCE, modes);
-            c.drawText(Ui.tr("Lower times mean a quicker response."), x, 466 * k, infoDescription);
-            drawInfoSection(c, "FLUIDITY AND TECHNICAL DETAILS", 530, INFO_FLUIDITY, modes);
-            c.drawText(Ui.tr("No measurement: data is not available yet."), x, 824 * k, infoDescription);
-            c.drawText(Ui.tr("These results are not a controlled benchmark."), x, 854 * k, infoDescription);
-        }
-
-        private void drawInfoSection(Canvas c, String title, float top, String[][] rows, JSONObject[] modes) {
-            float x = (LIST_X + 30) * k;
-            float[] columns = {(LIST_R - 300) * k, (LIST_R - 165) * k, (LIST_R - 30) * k};
-            c.drawText(Ui.tr(title), x, top * k, header);
-            c.drawText(Ui.tr("Original"), columns[0], top * k, infoMissing);
-            c.drawText("TV LDZ", columns[1], top * k, infoMissing);
-            c.drawText("Fast", columns[2], top * k, infoMissing);
-            for (int row = 0; row < rows.length; row++) {
-                float y = (top + 50 + row * 80) * k;
-                c.drawText(Ui.tr(rows[row][0]), x, y, cellLabel);
-                c.drawText(Ui.tr(rows[row][2]), x, y + 28 * k, infoDescription);
+            String[] names = {Ui.tr("Original"), "TV LDZ", "Fast"};
+            float[] columns = {1410 * k, 1580 * k, 1750 * k};
+            Paint labels = Ui.text(Ui.medium, 24 * k, 0xF2FFFFFF);
+            Paint values = Ui.numbers(Ui.semibold, 25 * k, 0xF2FFFFFF);
+            Paint columnTitle = Ui.text(Ui.medium, 23 * k, 0xFFB3C6DD);
+            values.setTextAlign(Paint.Align.CENTER);
+            columnTitle.setTextAlign(Paint.Align.CENTER);
+            for (int mode = 0; mode < modes.length; mode++) c.drawText(names[mode], columns[mode], 286 * k, columnTitle);
+            c.drawLine(x, 310 * k, LIST_R * k, 310 * k, dividerPaint);
+            for (int row = 0; row < INFO_ROWS.length; row++) {
+                float y = (370 + row * 78) * k;
+                String label = TextUtils.ellipsize(Ui.tr(INFO_ROWS[row][0]), new TextPaint(labels), 300 * k,
+                        TextUtils.TruncateAt.END).toString();
+                c.drawText(label, x, y, labels);
                 for (int mode = 0; mode < modes.length; mode++) {
-                    boolean available = modes[mode] != null && modes[mode].has(rows[row][1]);
-                    c.drawText(metric(modes[mode], rows[row][1]), columns[mode], y,
-                            available ? cellValue : infoMissing);
+                    boolean measured = modes[mode] != null && modes[mode].has(INFO_ROWS[row][1]);
+                    values.setColor(measured ? 0xF2FFFFFF : 0xFF8298B2);
+                    c.drawText(measured ? metric(modes[mode], INFO_ROWS[row][1]) : "—", columns[mode], y, values);
                 }
+                c.drawLine(x, y + 28 * k, LIST_R * k, y + 28 * k, dividerPaint);
             }
+            c.drawText(Ui.tr("Lower times and fewer delayed frames are better."), x, 790 * k, infoDescription);
+            c.drawText(Ui.tr("— No measurement. Memory varies with open apps."), x, 826 * k, infoDescription);
         }
 
         /** Home screen choice: Free My TV or the original, with a check on the one in use. */
@@ -1055,7 +1118,7 @@ public class SettingsActivity extends Activity {
             Paint heading = Ui.text(Ui.displaySemibold, 34 * k, 0xFFFFFFFF);
             c.drawText(Ui.tr("Home Screen"), LIST_X * k + 30 * k, (LIST_TOP - 24) * k, heading);
             String[][] options = {{"TV LDZ", Ui.tr("Full glass effects and animations")},
-                    {"TV LDZ Fast", Ui.tr("Flat glass and lighter effects")},
+                    {"TV LDZ Fast", Ui.tr("Black background, flat glass and no animations")},
                     {Ui.tr("Original"), Ui.tr("The TV's factory home screen")}};
             int current = freeActive() ? (Prefs.fastMode() ? 1 : 0) : 2;
             for (int i = 0; i < 3; i++) {
@@ -1226,7 +1289,7 @@ public class SettingsActivity extends Activity {
                                     settingsCategoriesFocused = true;
                                     focus = settingsCategory;
                                     pickScroll = 0;
-                                } else activity.finish();
+                                } else activity.returnHome();
                                 backDown = false;
                                 invalidate();
                                 spoken.focusMoved();
@@ -1343,7 +1406,7 @@ public class SettingsActivity extends Activity {
             String[] all = new String[base.length + 10];
             System.arraycopy(base, 0, all, 0, base.length);
             java.util.Arrays.fill(all, base.length, all.length, "›");
-            all[actionHomeRow()] = freeActive() ? "TV LDZ" : Ui.tr("Original");
+            all[actionHomeRow()] = freeActive() ? (Prefs.fastMode() ? "TV LDZ Fast" : "TV LDZ") : Ui.tr("Original");
             all[actionSaverRow()] = Ui.tr("Preview");
             all[actionSleepRow()] = sleepLeft == 0 ? Ui.tr("Off") : Ui.trf("{time} left", "time", SleepTimer.duration(sleepLeft));
             all[actionVolumeRow()] = volumeValue();
@@ -1352,7 +1415,7 @@ public class SettingsActivity extends Activity {
 
         private String[] settingCategoryLabels() {
             if (categoryLabelCache == null) categoryLabelCache = new String[] {
-                    Ui.tr("Home screen"), Ui.tr("Appearance"), Ui.tr("Sound"), Ui.tr("Weather"), Ui.tr("System")};
+                    Ui.tr("Home screen"), Ui.tr("Appearance"), Ui.tr("Sound"), Ui.tr("Weather"), Ui.tr("System"), Ui.tr("Other apps")};
             return categoryLabelCache;
         }
 
@@ -1426,7 +1489,7 @@ public class SettingsActivity extends Activity {
         }
 
         private int homeSettingRowAt(int position) {
-            if (screen != HOME_SETTINGS || settingsCategoriesFocused) return -1;
+            if (screen != HOME_SETTINGS || settingsCategoriesFocused || settingsCategory == OTHER_APPS) return -1;
             int[] rows = settingsRows(settingsCategory);
             int at = pickScroll + position;
             return at >= 0 && at < rows.length ? rows[at] : -1;
@@ -1461,10 +1524,10 @@ public class SettingsActivity extends Activity {
             v[2] = theme.equals("light") ? Ui.tr("Light") : theme.equals("dark") ? Ui.tr("Dark") : Ui.tr("Automatic");
             if (Config.CUSTOM_SKIN) {
                 String mode = Prefs.wallpaperMode();
-                v[WALLPAPER_ROW] = Ui.tr("forest".equals(mode) ? "Green forest mountains"
+                v[WALLPAPER_ROW] = Prefs.fastMode() ? Ui.tr("Black (Fast mode)") : Ui.tr("forest".equals(mode) ? "Green forest mountains"
                         : "snow".equals(mode) ? "Snowy mountains" : "beach".equals(mode) ? "Beach"
                         : "weather".equals(mode) ? "Weather and time" : "Sunset landscape");
-                v[WALLPAPER_BLUR_ROW] = Ui.tr(Prefs.wallpaperBlurred() ? "Blurred" : "Sharp");
+                v[WALLPAPER_BLUR_ROW] = Ui.tr(Prefs.fastMode() ? "Off (Fast mode)" : Prefs.wallpaperBlurred() ? "Blurred" : "Sharp");
                 String saver = Prefs.saverBackground();
                 v[SAVER_BACKGROUND_ROW] = Ui.tr("rotate".equals(saver) ? "Rotate landscapes"
                         : "photos".equals(saver) ? "Photos"
@@ -1529,6 +1592,10 @@ public class SettingsActivity extends Activity {
 
         /** Why row `i` can't be used here, for the person to read; null where it works. */
         private String unavailable(int i) {
+            if (screen == HOME_SETTINGS && !settingsCategoriesFocused && Prefs.fastMode()
+                    && (homeSettingRowAt(i) == WALLPAPER_ROW || homeSettingRowAt(i) == WALLPAPER_BLUR_ROW)) {
+                return Ui.tr("Fast uses a black background. Switch to TV LDZ to change the home wallpaper.");
+            }
             int n = rowCount();
             if (i < 0 || i >= n) return null;
             if (whyRows == null || whyRows.length != n || whyScreen != screen || whyScroll != pickScroll) {
@@ -1712,6 +1779,7 @@ public class SettingsActivity extends Activity {
 
         /** Changes the focused row's value one step (OK and → go forward, ← goes back). */
         private void adjust(int dir) {
+            if (screen == HOME_SETTINGS && settingsCategory == OTHER_APPS) return;
             // Refused or without Free My TV mode, Now Playing can still be turned off (and the refusal is then forgotten).
             boolean turnOff = screen == HOME_SETTINGS && homeSettingRow() == PLAYING_ROW && Prefs.nowPlaying();
             if (unavailable(focus) != null && !turnOff) return;
@@ -2324,6 +2392,11 @@ public class SettingsActivity extends Activity {
                 pickScroll = 0;
                 invalidate();
                 spoken.focusMoved();
+                return;
+            }
+            if (screen == HOME_SETTINGS && settingsCategory == OTHER_APPS) {
+                CompanionApps.activate(activity, focus);
+                invalidate();
                 return;
             }
             if (screen == MAIN_INFO) {

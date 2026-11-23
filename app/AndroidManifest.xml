@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.freemytv"
-    android:versionCode="39"
-    android:versionName="2.2.6">
+    android:versionCode="41"
+    android:versionName="2.2.8">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -25,6 +25,9 @@
          returns null). The shelf and streaming apps, the live TV apps and, through the <intent>, every TV app
          (for "All Apps"). -->
     <queries>
+        <package android:name="br.com.ldz.controle" />
+        <package android:name="br.com.galeria.painel" />
+        <package android:name="br.com.ldz.tempotv" />
         <package android:name="com.netflix.ninja" />
         <package android:name="com.google.android.youtube.tv" />
         <package android:name="com.amazon.firetv.youtube" />
@@ -143,6 +146,16 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".SystemSettingsActivity"
+            android:process=":home"
+            android:exported="false"
+            android:taskAffinity="io.freemytv.systemsettings"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density|fontScale|locale|layoutDirection"
+            android:theme="@style/FreeMyTV.Home" />
+
         <!-- Fire TV: the same home screen opened as a regular app (no resumeWhilePausing, which leaves window focus on
              Amazon's paused launcher on Fire OS). -->
         <activity
@@ -212,6 +225,7 @@
             android:authorities="io.freemytv.photos"
             android:exported="true" />
         <provider android:name=".RemoteSettingsProvider" android:authorities="io.freemytv.remote" android:process=":home" android:exported="true" />
+        <receiver android:name=".CompanionInstallReceiver" android:process=":home" android:exported="false" />
 
         <!-- The sleep timer's minutes left over any app, while the timer runs. A process of its own: a foreground
              service in :home would keep the whole home screen in memory under the app in front. -->

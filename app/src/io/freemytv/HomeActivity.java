@@ -26,6 +26,7 @@ public class HomeActivity extends Activity {
     /** Opens All Apps (a remote's All Apps button, RemoteKeys). */
     static final String EXTRA_ALL_APPS = "io.freemytv.ALL_APPS";
     private HomeView home;
+    private static HomeActivity active;
     private int prefsVersion = Prefs.version;   // settings changed while we were away: start over
     private final Object frameLock = new Object();
     private final ArrayDeque<Long> frameSamples = new ArrayDeque<>();
@@ -44,6 +45,7 @@ public class HomeActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        active = this;
         Watchdog.install(this);
         SleepTimer.listen(this);
         SleepTimer.check(this);
@@ -109,9 +111,22 @@ public class HomeActivity extends Activity {
         else home.reset(true);
     }
 
+    /** The remote provider shares :home so settings changes can redraw the active TV screen immediately. */
+    static void remoteSettingsChanged() {
+        HomeActivity current = active;
+        if (current == null) return;
+        current.runOnUiThread(() -> { if (current.home != null) current.home.remoteSettingsChanged(); });
+    }
+
     @Override protected void onDestroy() {
+        if (active == this) active = null;
         if (home != null) home.destroy();
         super.onDestroy();
+    }
+
+    @Override public void onBackPressed() {
+        // Home is a destination, not an app task to dismiss back to the previous player.
+        if (home != null) home.reset(!Prefs.fastMode());
     }
 
     @Override public void onTrimMemory(int level) {

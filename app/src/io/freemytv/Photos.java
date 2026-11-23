@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,6 +100,33 @@ final class Photos {
             listedStamp = stamp;
         }
         return listed;
+    }
+
+    /** Small 16:9 preview for Control LDZ's local photo manager. */
+    static byte[] thumbnail(File file) throws IOException {
+        BitmapFactory.Options bounds = new BitmapFactory.Options(); bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(file.getPath(), bounds);
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) throw new IOException("Foto inválida");
+        BitmapFactory.Options options = new BitmapFactory.Options(); options.inSampleSize = 1;
+        while (bounds.outWidth / (options.inSampleSize * 2) >= 160 && bounds.outHeight / (options.inSampleSize * 2) >= 90) options.inSampleSize *= 2;
+        Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
+        if (decoded == null) throw new IOException("Não foi possível ler a foto");
+        Bitmap preview = Bitmap.createScaledBitmap(decoded, 160, 90, true);
+        if (preview != decoded) decoded.recycle();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream(4096);
+        preview.compress(Bitmap.CompressFormat.JPEG, 55, bytes); preview.recycle();
+        return bytes.toByteArray();
+    }
+
+    /** Deletes exactly one imported photo and invalidates the cached home background. */
+    static synchronized boolean delete(Context c, String name) {
+        if (name == null || !name.matches("[0-9]{13}-[0-9]+\\.jpg")) return false;
+        File target = new File(dir(c), name);
+        boolean listedFile = false;
+        for (File file : files(c)) if (file.getName().equals(name)) { listedFile = true; break; }
+        if (!listedFile || !target.isFile() || !target.delete()) return false;
+        listed.remove(target); listedStamp = -1; backdrop = null; built = null;
+        return true;
     }
 
     /** On in Home Settings and something imported. */

@@ -16,20 +16,24 @@ O código está em [`demo.html`](demo.html) e reutiliza as imagens e a fonte de 
 
 ## Capturas de tela
 
-Capturas reais da versão 2.0.2 em uma TV TCL com Android TV. A 2.2.5 mantém a tela e os ajustes da 2.2.3, com o atualizador compatível com os nomes novo e antigo do repositório. Use as setas do controle para navegar pelas categorias do menu.
+Capturas reais da versão **2.2.8** em uma TV TCL com Android TV. Use as setas do controle para navegar pelas categorias do menu.
 
 <table>
   <tr>
     <td align="center"><strong>Tela inicial</strong><br><img src="docs/screenshots/home.png" alt="Tela inicial do TV LDZ, com previsão do tempo, aplicativos e atalhos" width="420"></td>
-    <td align="center"><strong>Todos os apps</strong><br><img src="docs/screenshots/todos-apps.png" alt="Grade de apps com a arte azul do TV LDZ preenchendo o card" width="420"></td>
+    <td align="center"><strong>Ajustes · Tela inicial</strong><br><img src="docs/screenshots/ajustes-tela-inicial.png" alt="Categoria Tela inicial com escolhas de home, descanso, prateleira e botões" width="420"></td>
   </tr>
   <tr>
-    <td align="center"><strong>Ajustes · Aparência</strong><br><img src="docs/screenshots/ajustes-aparencia.png" alt="Ajustes de modo e nitidez do fundo, descanso, idioma, temperatura e tema" width="420"></td>
+    <td align="center"><strong>Ajustes · Aparência</strong><br><img src="docs/screenshots/categoria-aparencia.png" alt="Categoria Aparência com modo de fundo, nitidez, fundo do descanso, temperatura e tema" width="420"></td>
     <td align="center"><strong>Tela de descanso</strong><br><img src="docs/screenshots/tela-descanso.png" alt="Tela de descanso com paisagem, hora, data e clima" width="420"></td>
   </tr>
   <tr>
-    <td align="center"><strong>Escolha do fundo da home</strong><br><img src="docs/screenshots/fundo-tela-inicial.png" alt="Miniaturas disponíveis para o fundo da tela inicial" width="420"></td>
-    <td align="center"><strong>Escolha do fundo do descanso</strong><br><img src="docs/screenshots/fundo-tela-descanso.png" alt="Miniaturas do descanso, com usar o fundo do início e alternar paisagens" width="420"></td>
+    <td align="center"><strong>Ajustes · Som</strong><br><img src="docs/screenshots/ajustes-som.png" alt="Categoria Som com sons de navegação, volume e ajustes de som do Android" width="420"></td>
+    <td align="center"><strong>Ajustes · Sistema</strong><br><img src="docs/screenshots/ajustes-sistema.png" alt="Categoria Sistema com atualizações via GitHub, idioma, timer, ajustes da TV e Mais informações" width="420"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Outros Apps</strong><br><img src="docs/screenshots/outros-apps-2.2.8.png" alt="Categoria Outros Apps com cards para Controle LDZ, Quadro LDZ e Tempo LDZ" width="420"></td>
+    <td align="center"><strong>Mais informações</strong><br><img src="docs/screenshots/mais-informacoes.png" alt="Métricas de desempenho e fluidez da TV LDZ" width="420"></td>
   </tr>
 </table>
 
@@ -44,15 +48,22 @@ Em **Clima e horário**, a ilustração acompanha a condição do tempo e o per�
 
 ## Baixar
 
-- **Versão publicada atualmente: 2.2.6.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ 1.5.1 também está anexado à release como APK separado e opcional.
+- **Versão publicada atualmente: 2.2.8.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ, Quadro LDZ e Tempo LDZ continuam como aplicativos separados e também podem ser obtidos pela categoria **Outros Apps** nos Ajustes.
 - **Tempo LDZ:** [projeto, código e releases](https://github.com/ludezam/tempoLDZ), distribuído separadamente.
 - **Quadro LDZ:** [projeto, instruções e releases](https://github.com/ludezam/Quadro-LDZ), distribuído separadamente.
 
-O APK do TV LDZ contém apenas o launcher. Tempo LDZ e Quadro LDZ continuam distribuídos separadamente; o Controle LDZ também é um aplicativo independente e aparece como anexo opcional na release.
+O APK do TV LDZ contém apenas o launcher. Na categoria **Outros Apps**, cada card consulta a release estável mais recente do respectivo repositório, baixa o APK e pede ao Android para confirmar a instalação. O download é validado por tamanho, SHA-256, identificador e assinatura do app. O Tempo LDZ ainda não tinha uma release com APK quando esta versão foi preparada; o card informa isso e poderá encontrá-la quando for publicada.
 
-O **Controle LDZ** continua sendo um aplicativo separado: instale-o na TV para abrir a página de controle pelo celular. A ponte de personalização permite ajustar fundo, desfoque, tela de descanso e fotos pela rede local. O APK compatível está disponível como anexo separado na mesma release.
+O **Controle LDZ** continua sendo um aplicativo separado: instale-o na TV para abrir a página de controle pelo celular. A ponte de personalização permite ajustar fundo, desfoque, tela de descanso e fotos pela rede local. Seu APK e suas versões ficam no [repositório Controle LDZ](https://github.com/ludezam/Controle-LDZ).
 
-## Versão publicada: 2.2.6
+## Versão 2.2.8
+
+- Adiciona a categoria **Outros Apps** abaixo de Sistema, com cards para Controle LDZ, Quadro LDZ e Tempo LDZ.
+- Os cards consultam as versões estáveis mais recentes nos repositórios próprios, verificam o APK e abrem a confirmação de instalação do Android. Nenhum app opcional é embutido no TV LDZ.
+- Mantém o atualizador do TV LDZ apontado para `ludezam/TV-LDZ`, procurando primeiro o arquivo `TV-LDZ.apk`. O nome anterior `FreeMyTV-LDZ.apk` continua aceito como alternativa para instalações em transição.
+- Tempo LDZ ainda não tinha release/APK pública disponível durante a preparação da 2.2.8; o card mostra essa condição.
+
+## Versão anterior: 2.2.6
 
 - O download principal passa a se chamar **TV-LDZ.apk**. O atualizador prefere esse nome e continua aceitando o antigo.
 - Esta release de transição oferece também **FreeMyTV-LDZ.apk**, uma cópia idêntica para permitir a atualização de instalações anteriores, incluindo a 2.2.5. Nas releases seguintes, o nome antigo poderá ser retirado.
@@ -132,7 +143,7 @@ O build Android usa JDK 17, Android SDK com `platforms;android-34` e `build-tool
 ./build.sh --generic --custom
 ```
 
-O comando cria um APK genérico personalizado em `TV-LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. O atualizador da 2.2.6 também aceita o nome antigo, `FreeMyTV-LDZ.apk`, durante a transição. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
+O comando cria um APK genérico personalizado em `TV-LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. O atualizador da 2.2.8 também aceita o nome antigo, `FreeMyTV-LDZ.apk`, durante a transição. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
 
 ## Créditos e licenças
 

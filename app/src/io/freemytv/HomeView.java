@@ -783,6 +783,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         staleQuote = Ui.text(Ui.medium, 21 * k, 0x99FFFFFF);
         staleQuote.setTextAlign(Paint.Align.RIGHT);
         rowTitle = Ui.text(Ui.semibold, 25 * k, 0xB3FFFFFF);
+        lTip.setShadowLayer(10 * k, 0, 2 * k, 0xFF000000);
+        rowTitle.setShadowLayer(10 * k, 0, 2 * k, 0xFF000000);
         drawerLabel = Ui.text(Ui.medium, 23 * k, 0xEBFFFFFF);
         drawerLabel.setTextAlign(Paint.Align.CENTER);
         cardTitle = Ui.text(Ui.semibold, 25 * k, 0xB3FFFFFF);
@@ -833,10 +835,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         boolean tilesMoving = step(tileFocus, dt);
         if (reorderAnim) tilesMoving |= stepReorder(dt, up);
         boolean statusMoving = step(statusFocus, dt);
-        boolean heroMoving = heroFocus.step(dt);
-        boolean topMoving = step(topFocus, dt), cardsMoving = step(cardFocus, dt) | step(cardOpen, dt) | cardScroll.step(dt)
-                | step(watchFocus, dt) | watchScroll.step(dt);
-        boolean tintMoving = tintMix.step(dt);
+        boolean heroMoving = heroFocus.step(dt, !Prefs.fastMode());
+        boolean topMoving = step(topFocus, dt), cardsMoving = step(cardFocus, dt) | step(cardOpen, dt) | cardScroll.step(dt, !Prefs.fastMode())
+                | step(watchFocus, dt) | watchScroll.step(dt, !Prefs.fastMode());
+        boolean tintMoving = tintMix.step(dt, !Prefs.fastMode());
         if (tintMoving) {
             sky.invalidate();
             platter.invalidate();   // the glass follows the background's colour
@@ -847,14 +849,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (topMoving) status.invalidate();
         heroMoving |= topMoving | cardsMoving;
         boolean drawerItemsMoving = step(drawerFocus, dt);
-        boolean gridMoving = step(gridFocus, dt) | scroll.step(dt);
-        boolean drawerMoving = drawer.step(dt);
-        boolean sheetMoving = sheet.step(dt);
+        boolean gridMoving = step(gridFocus, dt) | scroll.step(dt, !Prefs.fastMode());
+        boolean drawerMoving = drawer.step(dt, !Prefs.fastMode());
+        boolean sheetMoving = sheet.step(dt, !Prefs.fastMode());
         boolean toastFading = tickToast(up);
         boolean heroFading = tickHeroFade(up);
         boolean bgFading = tickBackgroundFade(up);
         boolean nightMoving = tickNight(up);
-        boolean menuMoving = menu.step(dt) | menuPick.step(dt);
+        boolean menuMoving = menu.step(dt, !Prefs.fastMode()) | menuPick.step(dt, !Prefs.fastMode());
         if (menuMoving || nightMoving && menuOpen) menuLayer.invalidate();
         else if (!menuOpen && menuLayer.getVisibility() == VISIBLE) menuLayer.setVisibility(INVISIBLE);
 
@@ -884,8 +886,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
         // Busy: something is moving, or the sheet or the drawer is open.
         boolean busy = tilesMoving || statusMoving || heroMoving || drawerItemsMoving || gridMoving || drawerMoving
-                || menuMoving || sheetMoving || toastFading || heroFading || bgFading || nightMoving || tintMoving || sheetOpen
-                || sheet.value > 0.001f || drawerOpen || drawer.value > 0.001f || toast != null || !toasts.isEmpty();
+                || menuMoving || sheetMoving || toastFading || heroFading || bgFading || nightMoving || tintMoving
+                || !Prefs.fastMode() && (sheetOpen || sheet.value > 0.001f || drawerOpen || drawer.value > 0.001f || toast != null)
+                || !toasts.isEmpty();
         idle = !busy;
         if (busy) Choreographer.getInstance().postFrameCallback(this);
         else Choreographer.getInstance().postFrameCallbackDelayed(this, 1000);
@@ -901,7 +904,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private static boolean step(Spring[] springs, float dt) {
         boolean moving = false;
-        for (Spring s : springs) moving |= s.step(dt);
+        for (Spring s : springs) moving |= s.step(dt, !Prefs.fastMode());
         return moving;
     }
 
@@ -1148,7 +1151,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         boolean want = data.isNight(System.currentTimeMillis());
         if (want == nightTarget) return;
         nightTarget = want;
-        if (animate && running) {
+        if (animate && running && !Prefs.fastMode()) {
             nightFrom = night;
             nightAt = SystemClock.uptimeMillis();
         } else {
@@ -1215,7 +1218,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lCardTitle.setColor(tone(L_INK, WHITE));
         lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
         lQuote.setColor(tone(L_FAINT, 0xB8FFFFFF));
-        lTip.setColor(tone(L_INK, WHITE));
+        lTip.setColor(Config.CUSTOM_SKIN ? WHITE : tone(L_INK, WHITE));
         lDate.setColor(tone(L_DIM, 0xFF98989D));
         lClock.setColor(tone(L_INK, WHITE));
         lWeather.setColor(tone(L_DIM, 0xFF98989D));
@@ -1294,6 +1297,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private static float fadeEase(long start, long up, float duration) {
+        if (Prefs.fastMode()) return 1;
         float t = Ui.clamp((up - start) / duration);
         return t * t * (3 - 2 * t);
     }
@@ -1960,7 +1964,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawDrawer(Canvas c) {
         if (drawerItems.isEmpty()) return;
-        rowTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
+        rowTitle.setColor(Config.CUSTOM_SKIN ? WHITE : tone(L_DIM, 0xB3FFFFFF));
         cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
         cardText.setColor(drawerInk(0.95f));
         cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
@@ -1973,9 +1977,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float titleBase = ROW_TITLE * k;
         Paint.Align titleAlign = rowTitle.getTextAlign();
         rowTitle.setTextAlign(Paint.Align.CENTER);
-        if (drawerInputs > 0) c.drawText(Ui.tr("Inputs"), (drawerRects[0].left + drawerRects[drawerInputs - 1].right) / 2f, titleBase, rowTitle);
-        if (drawerInputs < drawerItems.size()) c.drawText(Ui.tr("Shortcuts"),
-                (drawerRects[drawerInputs].left + drawerRects[drawerItems.size() - 1].right) / 2f, titleBase, rowTitle);
+        if (drawerInputs > 0) {
+            float cx = (drawerRects[0].left + drawerRects[drawerInputs - 1].right) / 2f;
+            homeLabelInk(rowTitle, cx, titleBase);
+            c.drawText(Ui.tr("Inputs"), cx, titleBase, rowTitle);
+        }
+        if (drawerInputs < drawerItems.size()) {
+            float cx = (drawerRects[drawerInputs].left + drawerRects[drawerItems.size() - 1].right) / 2f;
+            homeLabelInk(rowTitle, cx, titleBase);
+            c.drawText(Ui.tr("Shortcuts"), cx, titleBase, rowTitle);
+        }
         rowTitle.setTextAlign(titleAlign);
         int top = -1;
         for (int i = 0; i < drawerItems.size(); i++) if (drawerFocus[i].value > 0.02f && (top < 0 || drawerFocus[i].value > drawerFocus[top].value)) top = i;
@@ -2006,7 +2017,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             c.drawRoundRect(cell, r, r, fill);
         }
         boolean off = it.kind == HomeApps.INPUT && !it.connected;
-        int ink = blend(tone(off ? 0xFF8E8E93 : L_INK, off ? 0x6BFFFFFF : 0xF2FFFFFF), INK, f);
+        int ink = blend(Config.CUSTOM_SKIN ? (off ? 0xFFB5BFCC : WHITE)
+                : tone(off ? 0xFF8E8E93 : L_INK, off ? 0x6BFFFFFF : 0xF2FFFFFF), INK, f);
         Symbols.draw(getContext(), c, it.symbol, cx, cell.top + cell.height() * 0.4f, 34 * k * s, ink);
         drawerLabel.setColor(ink);
         drawerLabel.setTextSize(23 * k * s);
@@ -2388,7 +2400,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         if (toast == null) return false;
         long age = up - toastAt;
-        boolean fading = age < 350 || age > TOAST_MS - 450;
+        boolean fading = !Prefs.fastMode() && (age < 350 || age > TOAST_MS - 450);
+        if (Prefs.fastMode()) toastLayer.invalidate();
         if (fading) toastLayer.invalidate();
         return fading;
     }
@@ -2398,7 +2411,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void drawToast(Canvas c) {
         if (toast == null) return;
         float age = (SystemClock.uptimeMillis() - toastAt) / 1000f;
-        float a = Math.min(Ui.clamp(age / 0.3f), Ui.clamp((TOAST_MS / 1000f - age) / 0.4f));
+        float a = Prefs.fastMode() ? 1 : Math.min(Ui.clamp(age / 0.3f), Ui.clamp((TOAST_MS / 1000f - age) / 0.4f));
         if (a <= 0) return;
         float padX = 28 * k, padY = 18 * k, icon = 26 * k, iconW = Symbols.width(getContext(), "bell", icon);
         float tw = toast.getWidth() + iconW + 16 * k, th = toast.getHeight();
@@ -3043,8 +3056,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** One frame of the move: the slides, the lift and the wiggle. Returns true while any of them moves. */
     private boolean stepReorder(float dt, long up) {
-        boolean moving = step(tileSlide, dt) | moveLift.step(dt);
-        if (reordering || moveLift.value > 0.001f) {
+        boolean moving = step(tileSlide, dt) | moveLift.step(dt, !Prefs.fastMode());
+        if (!Prefs.fastMode() && (reordering || moveLift.value > 0.001f)) {
             wiggle = WIGGLE_DEG * (float) Math.sin((up - reorderAt) * (2 * Math.PI / WIGGLE_MS));
             moving = true;
         } else {
@@ -3382,6 +3395,18 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** The three cards of the current tab (Explore, Movies, Shows) and the background taken from the first one. */
     private void updateCards() {
+        if (Prefs.fastMode()) {
+            bgFrom = bgTo = null;
+            bgFadeAt = 0;
+            customWallpaperRequested = "";
+            customWallpaperKey = "";
+            customWallpaper = null;
+            scene.clearFrost();
+            scene.clearGlass();
+            sky.invalidate();
+            heroDirty = true;
+            return;
+        }
         cardSlots = Prefs.cards();
         if (!picksMode()) {
             // No picks on screen: no cards, and the plain gradient behind, or with the clock your photo if there is one.
@@ -3426,6 +3451,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Keeps one processed background in memory. Network and scene rendering run away from the drawing thread. */
     private Backdrop customWallpaper() {
+        if (Prefs.fastMode()) return null;
         String mode = Prefs.wallpaperMode();
         boolean weather = mode.equals("weather");
         int code = data.weather.code;
@@ -3956,6 +3982,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
      * same photo almost black (or a dark gradient), drawn on top during the transition.
      */
     private void drawLightSky(Canvas c) {
+        if (Prefs.fastMode()) {
+            c.drawColor(0xFF000000);
+            return;
+        }
         long up = SystemClock.uptimeMillis();
         float e = bgFadeAt == 0 ? 1 : fadeEase(bgFadeAt, up);
         boolean fading = bgFadeAt != 0;
@@ -4246,6 +4276,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 String label = it.label;
                 float half = lTip.measureText(label) / 2;
                 float x = Math.min(r.centerX(), CONTENT_R * k - half);
+                homeLabelInk(lTip, x, r.bottom + 44 * k);
                 lTip.setAlpha(Math.round(255 * f));
                 c.drawText(label, x, r.bottom + (40 + 4 * f) * k, lTip);
             }
@@ -4255,6 +4286,30 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float tw = lQuote.measureText(sleepText), size = lQuote.getTextSize();
         c.drawText(sleepText, right - tw, cy + Ui.halfCap(lQuote), lQuote);
         Symbols.draw(getContext(), c, "bedtime", right - tw - size * 0.9f, cy, size, lQuote.getColor());
+    }
+
+    /** Sample only nine software-bitmap pixels per label; no new image or full-screen pass. */
+    private void homeLabelInk(Paint paint, float x, float y) {
+        if (!Config.CUSTOM_SKIN) return;
+        int bg = 0xFF000000;
+        if (!Prefs.fastMode() && bgTo != null && bgTo.lightImage != null) {
+            Bitmap dayImage = bgTo.lightImage, nightImage = bgTo.nightImage;
+            int red = 0, green = 0, blue = 0;
+            for (int iy = -1; iy <= 1; iy++) for (int ix = -1; ix <= 1; ix++) {
+                int px = Math.max(0, Math.min(dayImage.getWidth() - 1,
+                        Math.round((x + ix * 38 * k) / w * (dayImage.getWidth() - 1))));
+                int py = Math.max(0, Math.min(dayImage.getHeight() - 1,
+                        Math.round((y + iy * 12 * k) / h * (dayImage.getHeight() - 1))));
+                int color = dayImage.getPixel(px, py);
+                if (nightImage != null) color = blend(color, nightImage.getPixel(px, py), night);
+                red += color >> 16 & 255; green += color >> 8 & 255; blue += color & 255;
+            }
+            bg = 0xFF000000 | red / 9 << 16 | green / 9 << 8 | blue / 9;
+            bg = blend(bg, blend(0xFFFFFFFF, 0xFF000000, night), tone(0.32f, 0.42f) * Ui.clamp(drawer.value));
+        }
+        int ink = luminance(bg) > 0.18f ? 0xFF000000 : 0xFFFFFFFF;
+        paint.setColor(ink);
+        paint.setShadowLayer(8 * k, 0, 1 * k, ink == 0xFFFFFFFF ? 0xFF000000 : 0xEEFFFFFF);
     }
 
     private void drawWifi(Canvas c, float cx, float cy, float size, boolean connected) {

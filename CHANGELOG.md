@@ -4,6 +4,15 @@
 
 # Histórico de versões
 
+## 2.2.8
+- Refina a navegação e a apresentação do modo Fast: fundo preto sem imagem, animações desativadas e estado ativo identificado corretamente.
+- Ajusta o retorno à home ao abrir opções de conexão, preserva o contraste dos textos da tela inicial e remove o oval em torno da TV na marca dos Ajustes.
+- Simplifica e alinha as colunas de Mais informações.
+- Adiciona a categoria **Outros Apps**, com cards para baixar as versões estáveis mais recentes de Controle LDZ, Quadro LDZ e Tempo LDZ nos respectivos repositórios.
+- Verifica tamanho, SHA-256, identificador do pacote e assinatura antes de entregar a instalação ao Android; o Android solicita confirmação do usuário.
+- Preserva o atualizador do TV LDZ direcionado a `ludezam/TV-LDZ`, com `TV-LDZ.apk` como nome preferido e `FreeMyTV-LDZ.apk` como alternativa de transição.
+- O repositório Tempo LDZ ainda não tinha uma release pública com APK durante a preparação desta versão; a categoria informa a indisponibilidade até que seja publicada.
+
 ## 2.2.6
 - O atualizador prefere TV-LDZ.apk e aceita FreeMyTV-LDZ.apk como alternativa; a release de transição fornece cópias idênticas com ambos os nomes.
 - Corrige a escolha de dia/noite do fundo da home usando o horário atual e os eventos solares salvos.

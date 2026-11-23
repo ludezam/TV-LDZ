@@ -568,7 +568,8 @@ final class HomeApps {
 
     /** Opens the item with the system zoom transition growing out of the card (the app starts opening right away). */
     static boolean open(Activity a, Item it, View from, int x, int y, int w, int h) {
-        return open(a, it, ActivityOptions.makeScaleUpAnimation(from, x, y, Math.max(w, 1), Math.max(h, 1)).toBundle());
+        return open(a, it, Prefs.fastMode() ? ActivityOptions.makeCustomAnimation(a, 0, 0).toBundle()
+                : ActivityOptions.makeScaleUpAnimation(from, x, y, Math.max(w, 1), Math.max(h, 1)).toBundle());
     }
 
     /** Opens the item; `options` for the transition, or null (the screensaver has no card to grow out of). */
@@ -597,6 +598,10 @@ final class HomeApps {
                 intent = new Intent(Settings.ACTION_SETTINGS);
                 break;
             case DEVICE:
+                if (TOP_WIFI.equals(it.key)) {
+                    intent = new Intent(a, SystemSettingsActivity.class);
+                    break;
+                }
                 // A fresh task: else Back walks through whatever the maker's settings app had open before
                 intent = new Intent(it.intent).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 break;
@@ -605,6 +610,7 @@ final class HomeApps {
         }
         if (intent == null) return false;
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (Prefs.fastMode()) intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         try {
             a.startActivity(intent, options);
             return true;
