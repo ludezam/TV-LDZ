@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.media.AudioManager;
 import android.graphics.Bitmap;
 import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
@@ -165,7 +166,7 @@ public class SettingsActivity extends Activity {
         private final Scene scene = new Scene();
         private final Handler handler = new Handler(Looper.getMainLooper());
         private final Spring[] pop = new Spring[12];
-        private final Spring[] categoryPop = new Spring[4];
+        private final Spring[] categoryPop = new Spring[5];
         private final List<String> appPkgs = new ArrayList<>(), appLabels = new ArrayList<>();
         // The list picker (the app of a remote button): what it shows, which one is in use, where we are.
         private final List<String> pickLabels = new ArrayList<>();
@@ -225,7 +226,8 @@ public class SettingsActivity extends Activity {
         private int w, h;
         private float k = 1;
         private Paint title, subtitle, version, rowLabel, rowValue, rowSub, header, cellLabel, cellValue, warn, spinner, white, shadow;
-        private Paint shellPaint, dividerPaint, wifiPaint, settingsHint, settingsFooter;
+        private Paint shellPaint, dividerPaint, wifiPaint, settingsHint, settingsFooter, volumeTrack, volumeFill;
+        private Paint infoDescription, infoMissing;
         private TextPaint notice, rowValueFit, settingLabelFit;
         private String clockText = "";
         private String versionLine = "";
@@ -274,6 +276,8 @@ public class SettingsActivity extends Activity {
             activity = a;
             for (int i = 0; i < pop.length; i++) pop[i] = new Spring(0.28f, 0.85f, 0);
             for (int i = 0; i < categoryPop.length; i++) categoryPop[i] = new Spring(0.28f, 0.85f, 0);
+            volumeTrack = new Paint(Paint.ANTI_ALIAS_FLAG);
+            volumeFill = new Paint(Paint.ANTI_ALIAS_FLAG);
             HomeData.Weather wx = HomeData.get(a).weather;
             Shaders.dream(scene.palette); // settings keeps the deep-blue palette at every time of day
             scene.setMotion(0.5f, 0.2f);
@@ -510,6 +514,9 @@ public class SettingsActivity extends Activity {
             cellLabel = Ui.text(Ui.regular, 25 * k, 0xD9FFFFFF);
             cellValue = Ui.numbers(Ui.regular, 25 * k, 0xD9FFFFFF);
             cellValue.setTextAlign(Paint.Align.RIGHT);
+            infoDescription = Ui.text(Ui.regular, 20 * k, 0x99FFFFFF);
+            infoMissing = Ui.text(Ui.regular, 19 * k, 0x73FFFFFF);
+            infoMissing.setTextAlign(Paint.Align.RIGHT);
             warn = Ui.text(Ui.regular, 23 * k, AMBER);
             notice = new TextPaint(Ui.text(Ui.regular, 23 * k, 0xB3FFFFFF));
             spinner = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -834,8 +841,7 @@ public class SettingsActivity extends Activity {
             float x = LIST_X * k + 30 * k;
             Paint heading = Ui.text(Ui.displaySemibold, 34 * k, 0xFFFFFFFF);
             c.drawText(Ui.tr("More information"), x, (LIST_TOP - 24) * k, heading);
-            float y = drawComparison(c, 196 * k);
-            drawNotices(c, y + 26 * k);
+            drawComparison(c);
             String error = state.optString("error");
             String busy = busyText();
             if (busy.equals(Ui.tr("Accept “Allow USB debugging?” on the TV (tick “Always allow”)."))) {
@@ -865,6 +871,7 @@ public class SettingsActivity extends Activity {
             if (row == actionRemoteRow()) return "gamepad";
             if (row == actionTvSettingsRow()) return "tv_settings";
             if (row == actionInfoRow()) return "sparkles";
+            if (row == actionVolumeRow() || row == actionSoundSettingsRow()) return "speaker";
             if (row == 0) return "tv_settings";
             if (row == 1) return "sunny";
             if (row == 2) return "clear_night";
@@ -883,7 +890,7 @@ public class SettingsActivity extends Activity {
         }
 
         private String categorySymbol(int category) {
-            return new String[] {"home", "sunny", "cloud", "settings"}[category];
+            return new String[] {"home", "sunny", "speaker", "cloud", "settings"}[category];
         }
 
         private void drawHomeSettingsSidebar(Canvas c) {
@@ -956,6 +963,12 @@ public class SettingsActivity extends Activity {
                         TextUtils.TruncateAt.END).toString(), rowRect.left + 68 * k, base, rowLabel);
                 String value = values[global].equals("›") ? Ui.tr("Open") : values[global];
                 float right = rowRect.right - 22 * k;
+                if (global == actionVolumeRow()) {
+                    drawVolumeSlider(c, rowRect, f);
+                    if (f < 0.01f && i < count - 1) c.drawLine(rowRect.left, rowRect.bottom + 8 * k, rowRect.right,
+                            rowRect.bottom + 8 * k, dividerPaint);
+                    continue;
+                }
                 if (values[global].equals("›")) {
                     Symbols.draw(getContext(), c, "chevron_right", right + 6 * k, rowRect.centerY(), 18 * k,
                             f > 0.45f ? INK : 0xAFFFFFFF);
@@ -995,46 +1008,46 @@ public class SettingsActivity extends Activity {
             return f;
         }
 
-        private float drawComparison(Canvas c, float y) {
-            float x = LIST_X * k + 30 * k, colA = LIST_R * k - 300 * k, colC = LIST_R * k - 30 * k;
-            float colB = (colA + colC) / 2f;
-            c.drawText(Ui.tr("COMPARISON"), x, y, header);
-            cellValue.setColor(0x73FFFFFF);
-            c.drawText(Ui.tr("Original"), colA, y, cellValue);
-            c.drawText("TV LDZ", colB, y, cellValue);
-            c.drawText("Fast", colC, y, cellValue);
-            cellValue.setColor(0xD9FFFFFF);
+        private static final String[][] INFO_PERFORMANCE = {
+                {"Open with the Home button", "homeMs", "Time to open the home screen after pressing Home."},
+                {"First home image", "launchMs", "Time until the first image of the home screen appears."}};
+        private static final String[][] INFO_FLUIDITY = {
+                {"Average time per frame", "avgFrameMs", "Less time usually means smoother navigation."},
+                {"Delayed frames", "jankPct", "Share of frames that took too long. Lower is better."},
+                {"TV free memory", "memAvailableMB", "Available RAM when measured; varies with open apps."}};
+
+        /** Both groups fit above Back; no submenu or background measurements are added. */
+        private void drawComparison(Canvas c) {
+            float x = (LIST_X + 30) * k;
+            c.drawText(Ui.tr("Latest measurements, taken at different times."), x, 210 * k, infoDescription);
             JSONObject metrics = state.optJSONObject("metrics");
-            JSONObject a = metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL);
-            JSONObject b = metrics == null ? null : metrics.optJSONObject(HomeMode.FREE);
-            JSONObject fast = metrics == null ? null : metrics.optJSONObject("fast");
-            String[][] rows = {{Ui.tr("Home button"), "homeMs"}, {Ui.tr("First frame"), "launchMs"},
-                    {Ui.tr("Average frame"), "avgFrameMs"},
-                    {Ui.tr("Frames over budget"), "jankPct"}, {Ui.tr("Free memory"), "memAvailableMB"},
-                    {Ui.tr("Home screen memory"), "homePssMB"}};
-            for (int i = 0; i < rows.length; i++) {
-                float base = y + (46 + 40 * i) * k;
-                c.drawText(rows[i][0], x, base, cellLabel);
-                c.drawText(metric(a, rows[i][1]), colA, base, cellValue);
-                c.drawText(metric(b, rows[i][1]), colB, base, cellValue);
-                c.drawText(metric(fast, rows[i][1]), colC, base, cellValue);
-            }
-            return y + (46 + 40 * rows.length) * k;
+            JSONObject[] modes = {metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL),
+                    metrics == null ? null : metrics.optJSONObject(HomeMode.FREE),
+                    metrics == null ? null : metrics.optJSONObject("fast")};
+            drawInfoSection(c, "PERFORMANCE", 270, INFO_PERFORMANCE, modes);
+            c.drawText(Ui.tr("Lower times mean a quicker response."), x, 466 * k, infoDescription);
+            drawInfoSection(c, "FLUIDITY AND TECHNICAL DETAILS", 530, INFO_FLUIDITY, modes);
+            c.drawText(Ui.tr("No measurement: data is not available yet."), x, 824 * k, infoDescription);
+            c.drawText(Ui.tr("These results are not a controlled benchmark."), x, 854 * k, infoDescription);
         }
 
-        private void drawNotices(Canvas c, float y) {
-            float x = LIST_X * k + 30 * k;
-            c.drawText(Ui.tr("NOTICES"), x, y, header);
-            JSONArray notices = state.optJSONArray("notices");
-            int shown = 0;
-            for (int i = 0; notices != null && i < notices.length() && shown < 2; i++) {
-                JSONObject o = notices.optJSONObject(i);
-                if (o == null) continue;
-                String line = ago(o.optLong("at")) + " · " + o.optString("text");
-                c.drawText(TextUtils.ellipsize(line, notice, 790 * k, TextUtils.TruncateAt.END).toString(), x, y + (42 + 38 * shown) * k, notice);
-                shown++;
+        private void drawInfoSection(Canvas c, String title, float top, String[][] rows, JSONObject[] modes) {
+            float x = (LIST_X + 30) * k;
+            float[] columns = {(LIST_R - 300) * k, (LIST_R - 165) * k, (LIST_R - 30) * k};
+            c.drawText(Ui.tr(title), x, top * k, header);
+            c.drawText(Ui.tr("Original"), columns[0], top * k, infoMissing);
+            c.drawText("TV LDZ", columns[1], top * k, infoMissing);
+            c.drawText("Fast", columns[2], top * k, infoMissing);
+            for (int row = 0; row < rows.length; row++) {
+                float y = (top + 50 + row * 80) * k;
+                c.drawText(Ui.tr(rows[row][0]), x, y, cellLabel);
+                c.drawText(Ui.tr(rows[row][2]), x, y + 28 * k, infoDescription);
+                for (int mode = 0; mode < modes.length; mode++) {
+                    boolean available = modes[mode] != null && modes[mode].has(rows[row][1]);
+                    c.drawText(metric(modes[mode], rows[row][1]), columns[mode], y,
+                            available ? cellValue : infoMissing);
+                }
             }
-            if (shown == 0) c.drawText(Ui.tr("None yet."), x, y + 42 * k, notice);
         }
 
         /** Home screen choice: Free My TV or the original, with a check on the one in use. */
@@ -1071,22 +1084,16 @@ public class SettingsActivity extends Activity {
         }
 
         private static String metric(JSONObject m, String key) {
-            if (m == null || !m.has(key)) return "—";
+            if (m == null || !m.has(key)) return Ui.tr("No measurement");
             long v = m.optLong(key);
-            if (key.equals("homeMs")) return Ui.trf("{n} ms", "n", v);
+            if (key.equals("homeMs") || key.equals("launchMs")) return Ui.trf("{n} ms", "n", v);
             if (key.equals("avgFrameMs")) return Ui.trf("{n} ms", "n", v);
             if (key.equals("jankPct")) return Ui.trf("{n}%", "n", String.format(Ui.locale(), "%.1f", v / 10.0));
             if (key.equals("memAvailableMB") && v >= 1024) return Ui.trf("{n} GB", "n", String.format(Ui.locale(), "%.2f", v / 1024.0));
             return Ui.trf("{n} MB", "n", v);
         }
 
-        private static String ago(long at) {
-            long minutes = Math.max(0, (System.currentTimeMillis() - at) / 60_000);
-            if (minutes < 1) return Ui.tr("now");
-            if (minutes < 60) return Ui.trf("{n} min ago", "n", minutes);
-            if (minutes < 48 * 60) return Ui.trf("{n} h ago", "n", minutes / 60);
-            return Ui.plural("plural|one:{n} day ago|other:{n} days ago", minutes / 1440);
-        }
+
 
         private static String versionName(Context c) {
             try {
@@ -1094,6 +1101,42 @@ public class SettingsActivity extends Activity {
             } catch (android.content.pm.PackageManager.NameNotFoundException e) {
                 return "TV LDZ";
             }
+        }
+
+        private int streamVolume() {
+            AudioManager audio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            return audio == null ? 0 : audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+        }
+
+        private int streamVolumeMax() {
+            AudioManager audio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            return audio == null ? 1 : Math.max(1, audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+        }
+
+        private String volumeValue() {
+            return Math.round(streamVolume() * 100f / streamVolumeMax()) + "%";
+        }
+
+        private void drawVolumeSlider(Canvas c, RectF box, float focused) {
+            float right = box.right - 76 * k;
+            float left = right - 190 * k;
+            float cy = box.centerY();
+            float fraction = Ui.clamp(streamVolume() / (float) streamVolumeMax());
+            volumeTrack.setColor(focused > 0.45f ? 0x55313C4A : 0x66FFFFFF);
+            volumeTrack.setStrokeWidth(7 * k);
+            volumeTrack.setStrokeCap(Paint.Cap.ROUND);
+            c.drawLine(left, cy, right, cy, volumeTrack);
+            volumeFill.setColor(focused > 0.45f ? 0xFF1264D8 : 0xFF67D8D0);
+            volumeFill.setStrokeWidth(7 * k);
+            volumeFill.setStrokeCap(Paint.Cap.ROUND);
+            c.drawLine(left, cy, left + (right - left) * fraction, cy, volumeFill);
+            volumeFill.setStyle(Paint.Style.FILL);
+            c.drawCircle(left + (right - left) * fraction, cy, 11 * k, volumeFill);
+            rowValue.setColor(focused > 0.45f ? INK : 0xD9FFFFFF);
+            Paint.Align oldAlign = rowValue.getTextAlign();
+            rowValue.setTextAlign(Paint.Align.RIGHT);
+            c.drawText(volumeValue(), box.right - 22 * k, cy + Ui.halfCap(rowValue), rowValue);
+            rowValue.setTextAlign(oldAlign);
         }
 
         boolean onKey(KeyEvent e) {
@@ -1132,6 +1175,8 @@ public class SettingsActivity extends Activity {
                     } else if (down && screen == HOME_SETTINGS) {
                         if (settingsCategoriesFocused && e.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
                             settingsCategoriesFocused = false; focus = 0; pickScroll = 0; whyRows = null;
+                        } else if (!settingsCategoriesFocused && homeSettingRow() == actionVolumeRow()) {
+                            adjust(e.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : -1);
                         } else if (!settingsCategoriesFocused && e.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
                             if (homeSettingRow() == TOP_ROW) commitWatch();
                             settingsCategoriesFocused = true; focus = settingsCategory; pickScroll = 0; whyRows = null;
@@ -1258,7 +1303,7 @@ public class SettingsActivity extends Activity {
             l.add(Ui.tr("City"));
             l.add(Ui.tr("Forecast"));
             l.add(Ui.tr("Now Playing widget"));
-            l.add(Ui.tr("Updates"));
+            l.add(Ui.tr("GitHub updates"));
             settingLabelCache = l.toArray(new String[0]);
             return settingLabelCache;
         }
@@ -1277,13 +1322,15 @@ public class SettingsActivity extends Activity {
         private int actionSleepRow() { return actionStart() + 5; }
         private int actionTvSettingsRow() { return actionStart() + 6; }
         private int actionInfoRow() { return actionStart() + 7; }
+        private int actionVolumeRow() { return actionStart() + 8; }
+        private int actionSoundSettingsRow() { return actionStart() + 9; }
 
         private String[] menuSettingLabels() {
             if (menuSettingLabelCache != null) return menuSettingLabelCache;
             String[] base = settingLabels();
             String[] actions = {Ui.tr("Home Screen"), Ui.tr("Screensaver, preview"), Ui.tr("Shelf"),
                     Ui.tr("Top Buttons"), Ui.tr("Remote Buttons"), Ui.tr("Sleep Timer"),
-                    Ui.tr("TV Settings"), Ui.tr("More information")};
+                    Ui.tr("TV Settings"), Ui.tr("More information"), Ui.tr("Volume"), Ui.tr("More sound settings")};
             String[] all = new String[base.length + actions.length];
             System.arraycopy(base, 0, all, 0, base.length);
             System.arraycopy(actions, 0, all, base.length, actions.length);
@@ -1293,26 +1340,29 @@ public class SettingsActivity extends Activity {
 
         private String[] menuSettingValues() {
             String[] base = settingValues();
-            String[] all = new String[base.length + 8];
+            String[] all = new String[base.length + 10];
             System.arraycopy(base, 0, all, 0, base.length);
             java.util.Arrays.fill(all, base.length, all.length, "›");
             all[actionHomeRow()] = freeActive() ? "TV LDZ" : Ui.tr("Original");
             all[actionSaverRow()] = Ui.tr("Preview");
             all[actionSleepRow()] = sleepLeft == 0 ? Ui.tr("Off") : Ui.trf("{time} left", "time", SleepTimer.duration(sleepLeft));
+            all[actionVolumeRow()] = volumeValue();
             return all;
         }
 
         private String[] settingCategoryLabels() {
             if (categoryLabelCache == null) categoryLabelCache = new String[] {
-                    Ui.tr("Home screen"), Ui.tr("Appearance"), Ui.tr("Weather"), Ui.tr("System")};
+                    Ui.tr("Home screen"), Ui.tr("Appearance"), Ui.tr("Sound"), Ui.tr("Weather"), Ui.tr("System")};
             return categoryLabelCache;
         }
 
         private int settingCategoryForRow(int row) {
-            if (row >= actionHomeRow() && row <= actionRemoteRow() || row == SOUNDS_ROW) return 0;
-            if (row <= 2 || Config.CUSTOM_SKIN && (row == WALLPAPER_ROW || row == WALLPAPER_BLUR_ROW || row == SAVER_BACKGROUND_ROW)) return 1;
-            if (row == WEATHER_ROW || row == CITY_ROW || row == FORECAST_ROW || row == PLAYING_ROW) return 2;
-            return 3;
+            if (row >= actionHomeRow() && row <= actionRemoteRow()) return 0;
+            if (row == SOUNDS_ROW || row == actionVolumeRow() || row == actionSoundSettingsRow()) return 2;
+            if (row == 0) return 4; // Language follows Updates in System.
+            if (row == 1 || row == 2 || Config.CUSTOM_SKIN && (row == WALLPAPER_ROW || row == WALLPAPER_BLUR_ROW || row == SAVER_BACKGROUND_ROW)) return 1;
+            if (row == WEATHER_ROW || row == CITY_ROW || row == FORECAST_ROW || row == PLAYING_ROW) return 3;
+            return 4;
         }
 
         /** Rows removed from this personalized menu; their old preferences remain stored but are inactive. */
@@ -1331,12 +1381,20 @@ public class SettingsActivity extends Activity {
                     if (group == 0) {
                         grouped.clear();
                         int[] order = {actionHomeRow(), actionSaverRow(), actionShelfRow(), actionTopRow(),
-                                actionRemoteRow(), SOUNDS_ROW};
+                                actionRemoteRow()};
                         for (int row : order) if (row >= 0 && row < menuSettingLabels().length && settingRowVisible(row)) grouped.add(row);
                     } else if (group == 1) {
                         grouped.clear();
-                        int[] order = {WALLPAPER_ROW, WALLPAPER_BLUR_ROW, SAVER_BACKGROUND_ROW, 0, 1, 2};
+                        int[] order = {WALLPAPER_ROW, WALLPAPER_BLUR_ROW, SAVER_BACKGROUND_ROW, 1, 2};
                         for (int row : order) if (row >= 0 && row < settingLabels().length && settingRowVisible(row)) grouped.add(row);
+                    } else if (group == 2) {
+                        grouped.clear();
+                        int[] order = {SOUNDS_ROW, actionVolumeRow(), actionSoundSettingsRow()};
+                        for (int row : order) if (row >= 0 && row < menuSettingLabels().length && settingRowVisible(row)) grouped.add(row);
+                    } else if (group == 4) {
+                        grouped.clear();
+                        int[] order = {updatesRow(), 0, actionSleepRow(), actionTvSettingsRow(), actionInfoRow()};
+                        for (int row : order) if (row >= 0 && row < menuSettingLabels().length && settingRowVisible(row)) grouped.add(row);
                     }
                     int[] indexed = new int[grouped.size()];
                     for (int i = 0; i < indexed.length; i++) indexed[i] = grouped.get(i);
@@ -1355,6 +1413,7 @@ public class SettingsActivity extends Activity {
         private String[] sidebarHints() {
             if (sidebarHintCache == null) sidebarHintCache = new String[] {
                     Ui.tr("↑ ↓ categories  ·  OK opens this group"),
+                    Ui.tr("← categories  ·  ↑ ↓ options  ·  OK opens or changes"),
                     Ui.tr("← categories  ·  ↑ ↓ options  ·  OK opens or changes"),
                     Ui.tr("← categories  ·  ↑ ↓ options  ·  OK opens or changes"),
                     Ui.tr("← categories  ·  ↑ ↓ options  ·  OK opens or changes")};
@@ -1691,6 +1750,16 @@ public class SettingsActivity extends Activity {
                 return;
             }
             int row = screen == HOME_SETTINGS ? homeSettingRow() : pickScroll + focus;
+            if (screen == HOME_SETTINGS && row == actionVolumeRow()) {
+                AudioManager audio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+                if (audio != null) {
+                    int next = Math.max(0, Math.min(audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+                            audio.getStreamVolume(AudioManager.STREAM_MUSIC) + dir));
+                    audio.setStreamVolume(AudioManager.STREAM_MUSIC, next, 0);
+                    spoken.focusMoved();
+                }
+                return;
+            }
             if (screen == THUMB_PICKER) { moveThumbnail(dir); return; }
             if (screen == HOME_SETTINGS && Config.CUSTOM_SKIN && (row == WALLPAPER_ROW || row == SAVER_BACKGROUND_ROW)) {
                 openThumbnailPicker(row == SAVER_BACKGROUND_ROW);
@@ -2328,6 +2397,11 @@ public class SettingsActivity extends Activity {
             } else if (screen == HOME_SETTINGS && homeSettingRow() == actionTvSettingsRow()) {
                 activity.startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                 return;
+            } else if (screen == HOME_SETTINGS && homeSettingRow() == actionVolumeRow()) {
+                adjust(1);
+            } else if (screen == HOME_SETTINGS && homeSettingRow() == actionSoundSettingsRow()) {
+                openSoundSettings();
+                return;
             } else if (screen == HOME_SETTINGS && homeSettingRow() == actionInfoRow()) {
                 screen = MAIN_INFO;
                 focus = 0;
@@ -2412,6 +2486,16 @@ public class SettingsActivity extends Activity {
             for (Spring s : pop) s.snap(0);
             invalidate();
             spoken.focusMoved();
+        }
+
+        private void openSoundSettings() {
+            try {
+                Intent sound = new Intent("android.settings.SOUND_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (sound.resolveActivity(getContext().getPackageManager()) != null) activity.startActivity(sound);
+                else activity.startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (Exception e) {
+                Toast.makeText(getContext(), Ui.tr("Couldn't open sound settings"), Toast.LENGTH_SHORT).show();
+            }
         }
 
         private static final String[] THUMB_MODES = {"sunset", "forest", "snow", "beach", "weather", "selected", "rotate"};

@@ -32,7 +32,7 @@ import java.security.MessageDigest;
 
 /**
  * Updates from GitHub's releases (Android only). Once a week, and from Home Settings > Updates, the latest release is
- * looked up; a newer one's FreeMyTV-LDZ.apk is downloaded and checked (GitHub's size and SHA-256, a newer version, the
+ * looked up; its TV LDZ.apk (or the former filename) is downloaded and checked (GitHub's size and SHA-256, a newer version, the
  * LDZ distribution key), then handed on OK to Android's installer, which asks before installing. Only the APK from the
  * LDZ releases (--generic, the distribution key) takes them: a build made on a computer has its own key and config, so it's
  * only told that a new version is out, and only when asked (nothing in the background could come of it).
@@ -43,13 +43,18 @@ import java.security.MessageDigest;
 final class Updates {
     private Updates() {}
 
+    // Query the current repository first; retain the old name as a fallback for installations during the transition.
+    // GitHub redirects the old repository name to this one after a rename.
     private static final String LATEST = "https://api.github.com/repos/ludezam/TV-LDZ/releases/latest";
-    // The only place the APK may come from: this repository's releases (github.com redirects to its download host).
+    private static final String LEGACY_LATEST = "https://api.github.com/repos/ludezam/FreeMyTV-LDZ/releases/latest";
+    // The only places the TV APK may come from: these repository releases (GitHub redirects downloads to its CDN).
     private static final String RELEASES = "https://github.com/ludezam/TV-LDZ/releases/download/";
+    private static final String LEGACY_RELEASES = "https://github.com/ludezam/FreeMyTV-LDZ/releases/download/";
     // The LDZ distribution certificate: `apksigner verify --print-certs` SHA-256.
     private static final String RELEASE_CERT = "36a1f3a1af9cb3716ea08f87711a24937a345d95a219a856879175a4fa994a74";
-    private static final String ASSET = "FreeMyTV-LDZ.apk";
-    private static final long MAX_SIZE = 30L << 20;   // the APK is about 1.5 MB
+    private static final String ASSET = "TV LDZ.apk";
+    private static final String LEGACY_ASSET = "FreeMyTV-LDZ.apk";
+    private static final long MAX_SIZE = 30L << 20;
     private static final long WEEK = 7 * 24 * 3600_000L;
     static final int JOB = 2900;
     static final String ACTION = "io.freemytv.UPDATE_STATUS";
@@ -193,7 +198,7 @@ final class Updates {
         String version = "";
         try {
             set(c, CHECKING, "", "");
-            JSONObject release = new JSONObject(get(LATEST));
+            JSONObject release = latestRelease();
             version = release.optString("tag_name").replaceFirst("^[vV]", "");
             if (version.isEmpty()) throw new IOException("the latest release has no tag");
             String installed = installedVersion(c);
@@ -208,17 +213,26 @@ final class Updates {
             }
             JSONObject asset = null;
             JSONArray assets = release.optJSONArray("assets");
-            for (int i = 0; assets != null && i < assets.length(); i++) {
-                if (ASSET.equals(assets.getJSONObject(i).optString("name"))) asset = assets.getJSONObject(i);
+            // Prefer the public TV LDZ name regardless of GitHub's asset order. The old name lets
+            // this transition build also consume releases prepared for older LDZ installations.
+            for (String accepted : new String[]{ASSET, LEGACY_ASSET}) {
+                for (int i = 0; assets != null && i < assets.length(); i++) {
+                    JSONObject candidate = assets.optJSONObject(i);
+                    if (candidate != null && accepted.equals(candidate.optString("name"))) {
+                        asset = candidate;
+                        break;
+                    }
+                }
+                if (asset != null) break;
             }
             if (asset == null) throw new IOException(ASSET + " isn't in release " + version);
             String url = asset.optString("browser_download_url"), digest = asset.optString("digest");
             long size = asset.optLong("size");
-            if (!url.startsWith(RELEASES) || size <= 0 || size > MAX_SIZE) {
+            if (!(url.startsWith(RELEASES) || url.startsWith(LEGACY_RELEASES)) || size <= 0 || size > MAX_SIZE) {
                 throw new IOException("unexpected " + ASSET + ": " + url + ", " + size + " bytes");
             }
             // One name per upload: an asset replaced under the same tag is fetched again.
-            String name = "FreeMyTV-" + version + "-" + Integer.toHexString((digest + size).hashCode()) + ".apk";
+            String name = "TV-LDZ-" + version + "-" + Integer.toHexString((digest + size).hashCode()) + ".apk";
             if (name.equals(before.optString("refused"))) {   // this upload was already found not to fit
                 set(c, FAILED, version, OTHER);
                 return false;
@@ -255,6 +269,24 @@ final class Updates {
     private static boolean offline(Exception e) {
         return e instanceof java.net.UnknownHostException || e instanceof java.net.SocketException
                 || e instanceof java.net.SocketTimeoutException || e instanceof javax.net.ssl.SSLException;
+    }
+
+    /** Finds the newest published release through the current name, falling back to the former name if needed. */
+    private static JSONObject latestRelease() throws IOException {
+        IOException failure = null;
+        for (String endpoint : new String[]{LATEST, LEGACY_LATEST}) {
+            try {
+                JSONObject candidate = new JSONObject(get(endpoint));
+                String version = candidate.optString("tag_name").replaceFirst("^[vV]", "");
+                if (version.isEmpty()) throw new IOException("the latest release has no tag at " + endpoint);
+                return candidate;
+            } catch (Exception e) {
+                failure = e instanceof IOException ? (IOException) e : new IOException("couldn't read " + endpoint, e);
+                AppLog.w("update: repository check failed " + endpoint + ": " + failure);
+            }
+        }
+        if (failure != null) throw failure;
+        throw new IOException("no TV LDZ releases found");
     }
 
     /** Every download but `keep` (null: all of them). */

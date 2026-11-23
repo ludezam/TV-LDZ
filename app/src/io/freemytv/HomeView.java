@@ -584,6 +584,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     }
 
+    /** Re-select the background after Control LDZ changes wallpaper/photo settings. */
+    void remoteSettingsChanged() {
+        customWallpaperKey = "";
+        customWallpaperRequested = "";
+        if (!running) return;
+        updatePicks();
+        invalidateAll();
+    }
+
     void destroy() {
         pause();
         try {
@@ -1881,7 +1890,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float gap = 18 * k, groupGap = 56 * k;
         int groups = drawerInputs > 0 && drawerInputs < n ? 2 : 1;
         float tw = Math.min(230 * k, (right - left - Math.max(0, n - groups) * gap - (groups - 1) * groupGap) / Math.max(1, n));
-        float x = left, top = ROW_TOP * k;
+        float span = n * tw + Math.max(0, n - groups) * gap + (groups - 1) * groupGap;
+        float x = (left + right - span) / 2f, top = ROW_TOP * k;
         for (int i = 0; i < n; i++) {
             if (i == drawerInputs && i > 0) x += groupGap - gap;
             drawerRects[i].set(x, top, x + tw, top + ROW_H * k);
@@ -1961,8 +1971,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         dayLow.setColor(tone(L_DIM, 0xADFFFFFF));
         pricePaint.setColor(drawerInk(0.95f));
         float titleBase = ROW_TITLE * k;
-        if (drawerInputs > 0) c.drawText(Ui.tr("Inputs"), drawerRects[0].left + 4 * k, titleBase, rowTitle);
-        if (drawerInputs < drawerItems.size()) c.drawText(Ui.tr("Shortcuts"), drawerRects[drawerInputs].left + 4 * k, titleBase, rowTitle);
+        Paint.Align titleAlign = rowTitle.getTextAlign();
+        rowTitle.setTextAlign(Paint.Align.CENTER);
+        if (drawerInputs > 0) c.drawText(Ui.tr("Inputs"), (drawerRects[0].left + drawerRects[drawerInputs - 1].right) / 2f, titleBase, rowTitle);
+        if (drawerInputs < drawerItems.size()) c.drawText(Ui.tr("Shortcuts"),
+                (drawerRects[drawerInputs].left + drawerRects[drawerItems.size() - 1].right) / 2f, titleBase, rowTitle);
+        rowTitle.setTextAlign(titleAlign);
         int top = -1;
         for (int i = 0; i < drawerItems.size(); i++) if (drawerFocus[i].value > 0.02f && (top < 0 || drawerFocus[i].value > drawerFocus[top].value)) top = i;
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
@@ -3415,8 +3429,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         String mode = Prefs.wallpaperMode();
         boolean weather = mode.equals("weather");
         int code = data.weather.code;
-        boolean day = data.weather.isDay;
         long now = System.currentTimeMillis(), sunrise = data.weather.sunrise, sunset = data.weather.sunset;
+        // The cached condition stays useful after standby; its isDay flag describes the old fetch time.
+        // Resolve the current solar period locally so waking at night never waits for a network refresh.
+        boolean day = !HomeData.isNight("auto", now, sunrise, sunset);
         String slot = weather ? Wallpapers.solarSlot(now, sunrise, sunset) : "";
         String key = (weather ? "weather:" + code + ":" + day + ":" + slot : mode)
                 + (Prefs.wallpaperBlurred() ? ":blur" : ":sharp");
