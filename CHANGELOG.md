@@ -5,7 +5,7 @@
 # Histórico de versões
 
 ## 2.2.6
-- O atualizador prefere TV LDZ.apk e aceita FreeMyTV-LDZ.apk como alternativa; a release de transição fornece cópias idênticas com ambos os nomes.
+- O atualizador prefere TV-LDZ.apk e aceita FreeMyTV-LDZ.apk como alternativa; a release de transição fornece cópias idênticas com ambos os nomes.
 - Corrige a escolha de dia/noite do fundo da home usando o horário atual e os eventos solares salvos.
 - Reorganiza Mais informações em duas seções visíveis, com explicações e indicação de falta de medição; corrige launchMs para milissegundos e retira da tela o histórico e a memória da home.
 - Renomeia a opção de Sistema para Atualizações via GitHub.

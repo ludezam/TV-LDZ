@@ -1,9 +1,9 @@
 # TV LDZ 2.2.6
 
 ## Download e transição do nome
-- O download principal é **TV LDZ.apk**.
+- O download principal é **TV-LDZ.apk**.
 - **FreeMyTV-LDZ.apk** é uma cópia idêntica, mantida nesta release para o atualizador das versões anteriores, incluindo a 2.2.5.
-- Instale somente um dos dois: são o mesmo aplicativo. Depois de atualizar para a 2.2.6, a TV passa a preferir TV LDZ.apk e continua aceitando o nome antigo.
+- Instale somente um dos dois: são o mesmo aplicativo. Depois de atualizar para a 2.2.6, a TV passa a preferir TV-LDZ.apk e continua aceitando o nome antigo.
 - O identificador Android io.freemytv e o certificado LDZ foram preservados para permitir atualização sobre as versões instaladas.
 
 ## Alterações
@@ -19,5 +19,5 @@
 - Assinatura APK v2/v3 validada, com o mesmo certificado LDZ: 36a1f3a1af9cb3716ea08f87711a24937a345d95a219a856879175a4fa994a74.
 - Validação visual e de atualização no aparelho ainda pendente. Esta publicação não modifica a limpeza de apps da TCL nem os ajustes de energia da TV.
 
-SHA-256 dos dois arquivos TV LDZ.apk e FreeMyTV-LDZ.apk:
-C9199FA32794279705539FF01FB3C5020B59804AA5FFC58F8FF1D786025091BA
+SHA-256 dos dois arquivos TV-LDZ.apk e FreeMyTV-LDZ.apk:
+42D5033FC6E96D973ECFDB4A43FF1725E8E084DE74DFF0C4CDB2ED2B0C42C738

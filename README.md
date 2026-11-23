@@ -54,7 +54,7 @@ O **Controle LDZ** continua sendo um aplicativo separado: instale-o na TV para a
 
 ## Versão publicada: 2.2.6
 
-- O download principal passa a se chamar **TV LDZ.apk**. O atualizador prefere esse nome e continua aceitando o antigo.
+- O download principal passa a se chamar **TV-LDZ.apk**. O atualizador prefere esse nome e continua aceitando o antigo.
 - Esta release de transição oferece também **FreeMyTV-LDZ.apk**, uma cópia idêntica para permitir a atualização de instalações anteriores, incluindo a 2.2.5. Nas releases seguintes, o nome antigo poderá ser retirado.
 - O fundo de clima escolhe dia/noite pelo horário atual e pelos horários de nascer/pôr do sol salvos, sem aguardar uma nova previsão.
 - Mais informações apresenta Desempenho e Fluidez e detalhes técnicos na mesma tela, com explicações, unidades corretas e indicação de ausência de medição. O histórico e a memória usada pela home foram retirados dessa tela.
@@ -117,7 +117,7 @@ O APK é destinado a TVs Android/Google TV. Com depuração ADB ativada e a TV e
 
 ```powershell
 adb connect IP_DA_TV:5555
-adb install -r "TV LDZ.apk"
+adb install -r "TV-LDZ.apk"
 ```
 
 Na primeira instalação, selecione **TV LDZ** no menu de apps e escolha **TV LDZ** em **Tela inicial**. Se o Android perguntar, permita a depuração USB.
@@ -132,7 +132,7 @@ O build Android usa JDK 17, Android SDK com `platforms;android-34` e `build-tool
 ./build.sh --generic --custom
 ```
 
-O comando cria um APK genérico personalizado em `TV LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. O atualizador da 2.2.6 também aceita o nome antigo, `FreeMyTV-LDZ.apk`, durante a transição. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
+O comando cria um APK genérico personalizado em `TV-LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. O atualizador da 2.2.6 também aceita o nome antigo, `FreeMyTV-LDZ.apk`, durante a transição. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
 
 ## Créditos e licenças
 
