@@ -31,4 +31,4 @@ O atualizador integrado consulta primeiro `ludezam/TV-LDZ` e procura `TV-LDZ.apk
 - Instalada por ADB em uma TV TCL com Android 9. Foram conferidos os três cards e consultas reais às releases: Controle LDZ 1.5.1 e Quadro LDZ 1.1.3 foram reconhecidos como atuais; Tempo LDZ informou que ainda não há APK publicado.
 - O fluxo de instalação completa de um app ausente ainda não foi verificado na TV. O app opcional não foi instalado nem substituído durante esta validação.
 
-Esta release altera o menu e adiciona somente as artes dos três cards; as demais imagens, fontes e símbolos da 2.2.7 foram preservados.
+Esta release altera o menu e adiciona somente as artes dos três cards; as demais imagens, fontes e símbolos da versão anterior foram preservados.
