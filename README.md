@@ -44,7 +44,7 @@ Em **Clima e horário**, a ilustração acompanha a condição do tempo e o per�
 
 ## Baixar
 
-- **Versão publicada atualmente: 2.2.5.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ 1.5.1 também está anexado à release como APK separado e opcional.
+- **Versão publicada atualmente: 2.2.6.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ 1.5.1 também está anexado à release como APK separado e opcional.
 - **Tempo LDZ:** [projeto, código e releases](https://github.com/ludezam/tempoLDZ), distribuído separadamente.
 - **Quadro LDZ:** [projeto, instruções e releases](https://github.com/ludezam/Quadro-LDZ), distribuído separadamente.
 
@@ -52,7 +52,16 @@ O APK do TV LDZ contém apenas o launcher. Tempo LDZ e Quadro LDZ continuam dist
 
 O **Controle LDZ** continua sendo um aplicativo separado: instale-o na TV para abrir a página de controle pelo celular. A ponte de personalização permite ajustar fundo, desfoque, tela de descanso e fotos pela rede local. O APK compatível está disponível como anexo separado na mesma release.
 
-## Versão publicada: 2.2.5
+## Versão publicada: 2.2.6
+
+- O download principal passa a se chamar **TV LDZ.apk**. O atualizador prefere esse nome e continua aceitando o antigo.
+- Esta release de transição oferece também **FreeMyTV-LDZ.apk**, uma cópia idêntica para permitir a atualização de instalações anteriores, incluindo a 2.2.5. Nas releases seguintes, o nome antigo poderá ser retirado.
+- O fundo de clima escolhe dia/noite pelo horário atual e pelos horários de nascer/pôr do sol salvos, sem aguardar uma nova previsão.
+- Mais informações apresenta Desempenho e Fluidez e detalhes técnicos na mesma tela, com explicações, unidades corretas e indicação de ausência de medição. O histórico e a memória usada pela home foram retirados dessa tela.
+- A opção em Sistema agora se chama **Atualizações via GitHub**.
+- Mantém a integração com o Controle LDZ, distribuído como APK separado.
+
+## Versão anterior: 2.2.5
 
 - Mantém as telas e os ajustes da versão 2.2.3, incluindo fundo da home, nitidez, tela de descanso e integração com o Controle LDZ.
 - Em relação à 2.2.3, a única mudança funcional no TV LDZ é o atualizador: consulta `TV-LDZ` e também aceita `FreeMyTV-LDZ`, o nome anterior do repositório.
@@ -108,7 +117,7 @@ O APK é destinado a TVs Android/Google TV. Com depuração ADB ativada e a TV e
 
 ```powershell
 adb connect IP_DA_TV:5555
-adb install -r FreeMyTV-LDZ.apk
+adb install -r "TV LDZ.apk"
 ```
 
 Na primeira instalação, selecione **TV LDZ** no menu de apps e escolha **TV LDZ** em **Tela inicial**. Se o Android perguntar, permita a depuração USB.
@@ -123,7 +132,7 @@ O build Android usa JDK 17, Android SDK com `platforms;android-34` e `build-tool
 ./build.sh --generic --custom
 ```
 
-O comando cria um APK genérico personalizado em `FreeMyTV-LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
+O comando cria um APK genérico personalizado em `TV LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. O atualizador da 2.2.6 também aceita o nome antigo, `FreeMyTV-LDZ.apk`, durante a transição. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
 
 ## Créditos e licenças
 

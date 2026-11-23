@@ -1,6 +1,8 @@
 /out/
 /FreeMyTV.apk
 /FreeMyTV-LDZ.apk
+/TV LDZ.apk
+/*.apk.idsig
 /config.properties
 **/config.properties
 **/tools.local.json
@@ -10,4 +12,3 @@
 /TV LDZ 2.0.4/
 /.gitignore apoio/
 app/assets/custom/
-
