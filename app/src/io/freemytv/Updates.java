@@ -32,7 +32,7 @@ import java.security.MessageDigest;
 
 /**
  * Updates from GitHub's releases (Android only). Once a week, and from Home Settings > Updates, the latest release is
- * looked up; its TV LDZ.apk (or the former filename) is downloaded and checked (GitHub's size and SHA-256, a newer version, the
+ * looked up; its TV-LDZ.apk (or the former filename) is downloaded and checked (GitHub's size and SHA-256, a newer version, the
  * LDZ distribution key), then handed on OK to Android's installer, which asks before installing. Only the APK from the
  * LDZ releases (--generic, the distribution key) takes them: a build made on a computer has its own key and config, so it's
  * only told that a new version is out, and only when asked (nothing in the background could come of it).
@@ -52,7 +52,7 @@ final class Updates {
     private static final String LEGACY_RELEASES = "https://github.com/ludezam/FreeMyTV-LDZ/releases/download/";
     // The LDZ distribution certificate: `apksigner verify --print-certs` SHA-256.
     private static final String RELEASE_CERT = "36a1f3a1af9cb3716ea08f87711a24937a345d95a219a856879175a4fa994a74";
-    private static final String ASSET = "TV LDZ.apk";
+    private static final String ASSET = "TV-LDZ.apk";
     private static final String LEGACY_ASSET = "FreeMyTV-LDZ.apk";
     private static final long MAX_SIZE = 30L << 20;
     private static final long WEEK = 7 * 24 * 3600_000L;
