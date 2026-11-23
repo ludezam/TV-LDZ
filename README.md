@@ -4,6 +4,16 @@
 
 > O nome deste projeto é TV LDZ. Free My TV é o projeto original que serviu de inspiração; os créditos e a licença do código original estão preservados nesta distribuição.
 
+## Experimente no navegador
+
+**[Abrir o demo interativo do TV LDZ](https://ludezam.github.io/TV-LDZ/demo.html)**
+
+Explore a tela inicial, os Ajustes por categorias, as miniaturas de fundos, a tela de descanso, a prateleira, Entradas e Atalhos. O demo mantém a tela da TV em **16:9**; no celular, vire o aparelho para a posição horizontal. Use o controle na página, toque/clique ou as teclas **setas**, **Enter** e **Esc**. Segure um app da prateleira para abrir seu menu.
+
+As preferências são salvas apenas no navegador. Horário e data acompanham o dispositivo; clima, aplicativos e ações do Android são simulados. O demo não se conecta à TV nem instala aplicativos.
+
+O código está em [`demo.html`](demo.html) e reutiliza as imagens e a fonte de `app/assets`. Para abrir localmente, baixe o repositório completo e abra esse arquivo.
+
 ## Capturas de tela
 
 Capturas reais da versão 2.0.2 em uma TV TCL com Android TV. A 2.2.5 mantém a tela e os ajustes da 2.2.3, com o atualizador compatível com os nomes novo e antigo do repositório. Use as setas do controle para navegar pelas categorias do menu.
@@ -128,5 +138,4 @@ Veja também os projetos independentes [Tempo LDZ](https://github.com/ludezam/te
 
 - [FreeMyProjector LDZ](https://github.com/ludezam/FreeMyProjector-LDZ) — home personalizada para projetores Android.
 - [Controle LDZ](https://github.com/ludezam/Controle-LDZ) — controle remoto local por Wi-Fi para Android TV e projetores Android.
-
 
