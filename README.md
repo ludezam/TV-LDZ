@@ -41,20 +41,31 @@ Capturas reais da versão **2.2.8** em uma TV TCL com Android TV. Use as setas d
 
 As escolhas do fundo da **Tela inicial** e da **Tela de descanso** são independentes:
 
-- **Tela inicial:** Paisagem do pôr do sol, Montanhas e florestas verdes, Montanhas nevadas, Praia ou Clima e horário.
-- **Tela de descanso:** oferece as mesmas cinco opções, além de **Usar o fundo do Início** e **Alternar paisagens**. A primeira acompanha a escolha da Tela inicial; a segunda alterna entre as quatro paisagens a cada 30 segundos.
+- **Tela inicial:** Paisagem do pôr do sol, Montanhas e florestas verdes, Montanhas nevadas, Praia, Clima e horário, **Fotos** (imagens enviadas pelo Controle LDZ) ou **Alternar paisagens**.
+- **Tela de descanso:** oferece as mesmas opções de paisagem e clima, além de **Usar o fundo do Início**, **Fotos** e **Alternar paisagens**. A primeira acompanha a escolha da Tela inicial; a opção de alternância percorre as quatro paisagens a cada 30 segundos.
 
 Em **Clima e horário**, a ilustração acompanha a condição do tempo e o período do dia. Há imagens próprias para os 15 minutos antes e depois do nascer e do pôr do sol. As paisagens ficam incluídas no APK; a opção de clima precisa dos dados meteorológicos para acompanhar o tempo atual.
 
 ## Baixar
 
-- **Versão publicada atualmente: 2.2.9.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ, Quadro LDZ e Tempo LDZ continuam como aplicativos separados e também podem ser obtidos pela categoria **Outros Apps** nos Ajustes.
+- **Versão publicada atualmente: 2.2.11.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ, Quadro LDZ e Tempo LDZ continuam como aplicativos separados e também podem ser obtidos pela categoria **Outros Apps** nos Ajustes.
 - **Tempo LDZ:** [projeto, código e releases](https://github.com/ludezam/tempoLDZ), distribuído separadamente.
 - **Quadro LDZ:** [projeto, instruções e releases](https://github.com/ludezam/Quadro-LDZ), distribuído separadamente.
 
 O APK do TV LDZ contém apenas o launcher. Na categoria **Outros Apps**, cada card consulta a release estável mais recente do respectivo repositório, baixa o APK e pede ao Android para confirmar a instalação. O download é validado por tamanho, SHA-256, identificador e assinatura do app. O Tempo LDZ 1.5.0 já possui uma release pública estável e pode ser instalado por esse card.
 
 O **Controle LDZ** continua sendo um aplicativo separado: instale-o na TV para abrir a página de controle pelo celular. A ponte de personalização permite ajustar fundo, desfoque, tela de descanso e fotos pela rede local. Seu APK e suas versões ficam no [repositório Controle LDZ](https://github.com/ludezam/Controle-LDZ).
+
+## Versão 2.2.11
+
+- Em Aparência, Fotos permite escolher na própria TV uma imagem enviada pelo Controle LDZ; a seleção pelo celular continua disponível.
+- Adiciona Alternar paisagens ao fundo da Tela inicial e da Tela de descanso.
+- Reforça a sombra suave sob hora, data e clima na tela de descanso e dimensiona os textos menores proporcionalmente à largura da hora.
+
+## Versão 2.2.10
+
+- O Controle LDZ pode enviar uma foto escolhida na galeria para o fundo da Tela inicial.
+- Mantém a foto selecionada após abrir ou reiniciar o launcher e preserva sua resolução.
 
 ## Versão 2.2.9
 
