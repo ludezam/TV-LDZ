@@ -35,8 +35,8 @@ import java.util.concurrent.Executors;
  *  - the recommendations' photos in full screen, one every 30 s, with a slow zoom and pan (the "Ken Burns" effect of
  *    the Apple TV photos) and a crossfade between them; each photo is loaded 10% larger than the screen, so the zoom
  *    never upscales it;
- *  - top right, like the iPhone lock screen: the date with the weather, the big Liquid Glass clock (the photo shows
- *    through the digits, bent at the edges; Shaders.GLASS_TEXT) and the compact prices;
+ *  - lower left: a compact date/weather block and the Liquid Glass clock (the photo shows through the digits, bent at
+ *    the edges; Shaders.GLASS_TEXT);
  *  - bottom left, the photo's caption: the time-of-day label ("TONIGHT"), the title, and genre · runtime · service.
  * Dark scrims only where there is text, stronger where the photo is bright. Any key exits (as on Apple TV); with Watch
  * from the screensaver on (Prefs.saverWatch), OK first opens the title in its app, and the caption says so.
@@ -49,7 +49,10 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     /** Photos 10% larger than the screen (the zoom goes up to 1.1 without upscaling). */
     private static final int PW = 2112, PH = 1188;
     private static final float MARGIN = 80, RIGHT = 1840, TITLE_W = 900, META_BASE = 1008;
-    private static final float DATE_BASE = 92, CLOCK_TOP = 120, CLOCK_SIZE = 200, QUOTES_GAP = 52;
+    // Screensaver clock/date/weather: compact lower-left block (about half the previous scale).
+    private static final float SAVER_LEFT = 80, SAVER_DATE_BASE = 790, SAVER_CLOCK_TOP = 820,
+            SAVER_CLOCK_SIZE = 100, SAVER_WEATHER_BASE = 970;
+    private static final float QUOTES_GAP = 52;
     private static final double DRIFT_PERIOD_S = 600;
     // The high and low and the stale prices line, made again only when they change (drawn on every frame).
     private String range = "", staleLine = "", staleFor = "";
@@ -252,21 +255,21 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         content.setPosition(0, 0, w, h);
         chrome.setPosition(0, 0, w, h);
         // Without photos (the clock over the aurora).
-        datePaint = Ui.text(Ui.semibold, 36 * k, 0xD9FFFFFF);
-        datePaint.setTextAlign(Paint.Align.CENTER);
-        clockPaint = Ui.numbers(Ui.thin, 280 * k, 0xF2FFFFFF);
-        clockPaint.setTextAlign(Paint.Align.CENTER);
+        datePaint = Ui.text(Ui.semibold, 18 * k, 0xE6FFFFFF);
+        datePaint.setTextAlign(Paint.Align.LEFT);
+        clockPaint = Ui.numbers(Ui.thin, 140 * k, 0xF2FFFFFF);
+        clockPaint.setTextAlign(Paint.Align.LEFT);
         clockPaint.setLetterSpacing(-0.01f);
-        weatherPaint = Ui.numbers(Ui.medium, 30 * k, 0xC7FFFFFF);
-        weatherDim = Ui.numbers(Ui.regular, 28 * k, 0x80FFFFFF);
+        weatherPaint = Ui.numbers(Ui.medium, 15 * k, 0xE6FFFFFF);
+        weatherDim = Ui.numbers(Ui.regular, 14 * k, 0xBFFFFFFF);
         quotePaint = Ui.numbers(Ui.medium, 24 * k, 0x99FFFFFF);
         stalePaint = Ui.text(Ui.regular, 20 * k, 0x59FFFFFF);
         stalePaint.setTextAlign(Paint.Align.CENTER);
         // With photos: the corner (date, clock, prices) and the caption.
-        cornerDate = Ui.numbers(Ui.semibold, 30 * k, 0xEBFFFFFF);
+        cornerDate = Ui.numbers(Ui.semibold, 15 * k, 0xF2FFFFFF);
         cornerQuote = Ui.numbers(Ui.regular, 23 * k, 0xC7FFFFFF);
         cornerStale = Ui.text(Ui.medium, 21 * k, 0x99FFFFFF);
-        cornerClock = Ui.numbers(Ui.displaySemibold, CLOCK_SIZE * k, 0xF2FFFFFF);
+        cornerClock = Ui.numbers(Ui.displaySemibold, SAVER_CLOCK_SIZE * k, 0xF2FFFFFF);
         labelPaint = Ui.text(Ui.medium, 25 * k, 0xB8FFFFFF);
         labelPaint.setLetterSpacing(0.1f);
         titlePaint = new TextPaint(Ui.text(Ui.displayMedium, 76 * k, 0xFFFFFFFF));
@@ -278,7 +281,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         Symbols.warmWeather(getContext(), 32 * k);   // under the clock
         for (Paint p : new Paint[] {datePaint, clockPaint, weatherPaint, weatherDim, quotePaint, stalePaint,
                 cornerDate, cornerQuote, cornerStale, cornerClock, labelPaint, titlePaint, metaPaint, hintPaint, barPaint}) {
-            p.setShadowLayer(24 * k, 0, 2 * k, 0xB0000000);
+            p.setShadowLayer(28 * k, 0, 3 * k, 0xE0000000);
         }
         fitPlaying();
         glassFor = "";
@@ -504,7 +507,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         playingBottomWidth = quotePaint.measureText(playingBottom);
         cornerCap = Ui.cap(cornerQuote);
         bottomCap = Ui.cap(quotePaint);
-        cornerBase = (CLOCK_TOP + Ui.cap(cornerClock) / k + QUOTES_GAP) * k;
+        cornerBase = (SAVER_CLOCK_TOP + Ui.cap(cornerClock) / k + QUOTES_GAP) * k;
     }
 
     private void drawBars(Canvas c, float x, float base, float cap, int color, float alpha) {
@@ -567,34 +570,34 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     private void recordChrome() {
         Canvas c = chrome.beginRecording(w, h);
         try {
+            float left = SAVER_LEFT * k;
             float right = RIGHT * k;
-            float x = right;
+            float x = left;
             HomeData.Weather wx = data.weather;
             if (!Double.isNaN(wx.temp) && Prefs.weather()) {
                 String temp = HomeData.degrees(wx.temp);
-                float tw = cornerDate.measureText(temp);
-                c.drawText(temp, x - tw, DATE_BASE * k, cornerDate);
-                x -= tw + 10 * k;
+                c.drawText(temp, x, SAVER_WEATHER_BASE * k, cornerDate);
+                x += cornerDate.measureText(temp) + 10 * k;
                 String symbol = Symbols.weather(wx.code, wx.isDay);
-                float size = 30 * k, sw = Symbols.width(getContext(), symbol, size);
-                Symbols.draw(getContext(), c, symbol, x - sw / 2, DATE_BASE * k - Ui.halfCap(cornerDate), size, 0xEBFFFFFF);
-                x -= sw + 26 * k;
+                float size = 15 * k, sw = Symbols.width(getContext(), symbol, size);
+                Symbols.draw(getContext(), c, symbol, x + sw / 2, SAVER_WEATHER_BASE * k - Ui.halfCap(cornerDate), size, 0xF2FFFFFF);
+                x += sw + 12 * k;
             }
-            c.drawText(date, x - cornerDate.measureText(date), DATE_BASE * k, cornerDate);
+            c.drawText(date, left, SAVER_DATE_BASE * k, cornerDate);
 
             Glass g = glass;
             if (g != null && glassShader != null) {
                 // The shadow under the glass: sets the digits apart from a bright photo.
-                shadowPaint.setAlpha(190);
-                c.drawBitmap(g.shadow, g.x, g.y + 6 * k, shadowPaint);
+                shadowPaint.setAlpha(240);
+                c.drawBitmap(g.shadow, g.x, g.y + 4 * k, shadowPaint);
             } else {
                 Rect ink = new Rect();
                 cornerClock.getTextBounds(clock, 0, clock.length(), ink);
-                c.drawText(clock, right - ink.right, CLOCK_TOP * k - ink.top, cornerClock);
+                c.drawText(clock, left - ink.left, SAVER_CLOCK_TOP * k - ink.top, cornerClock);
             }
 
             // Compact prices under the clock, right-aligned.
-            float base = (CLOCK_TOP + Ui.cap(cornerClock) / k + QUOTES_GAP) * k;
+            float base = (SAVER_CLOCK_TOP + Ui.cap(cornerClock) / k + QUOTES_GAP) * k;
             float cap = Ui.cap(cornerQuote), gap = 7 * k, spacing = 26 * k;
             int[] coins = HomeData.active();
             int n = playingCorner != null ? 0 : HomeData.coinCount();   // what an app is playing takes their place
@@ -649,7 +652,9 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         final Paint paint = new Paint(cornerClock);
         paint.clearShadowLayer();
         paint.setColor(0xFFFFFFFF);
-        final float right = RIGHT * k, top = CLOCK_TOP * k, scale = k;
+        Rect ink = new Rect();
+        paint.getTextBounds(text, 0, text.length(), ink);
+        final float right = SAVER_LEFT * k + ink.width(), top = SAVER_CLOCK_TOP * k, scale = k;
         final int gen = generation;
         worker.execute(() -> {
             Glass g = makeGlass(text, paint, right, top, scale);
@@ -704,7 +709,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
                 int r = 128 + Math.round(127 * gx / max), g = 128 + Math.round(127 * gy / max);
                 int b = Math.min(255, height[i] / 16);
                 slope[i] = 0xFF000000 | (r << 16) | (g << 8) | b;
-                shadow[i] = Math.min(255, soft[i] / 16) << 24;
+                shadow[i] = Math.min(255, soft[i] / 12) << 24;
             }
         }
         int x = Math.round(right - ink.width()) - pad, y = Math.round(top) - pad;
@@ -891,16 +896,16 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     }
 
     private void drawContent(Canvas c) {
-        float cx = w / 2f;
+        float cx = w / 2f, x0 = SAVER_LEFT * k;
         float clockCap = Ui.cap(clockPaint);
-        float clockBase = h * 0.5f + clockCap / 2 - 10 * k;
-        c.drawText(date, cx, clockBase - clockCap - 34 * k, datePaint);
-        c.drawText(clock, cx, clockBase, clockPaint);
+        float clockBase = h - 145 * k;
+        c.drawText(date, x0, clockBase - clockCap - 20 * k, datePaint);
+        c.drawText(clock, x0, clockBase, clockPaint);
 
         // Weather: symbol, temperature, high and low, centered under the clock.
         HomeData.Weather wx = data.weather;
         if (!Double.isNaN(wx.temp) && Prefs.weather()) {
-            float base = clockBase + 76 * k;
+            float base = clockBase + 40 * k;
             String symbol = Symbols.weather(wx.code, wx.isDay);
             String now = HomeData.degrees(wx.temp);
             if (wx != rangeWeather || Ui.generation != rangeGeneration || Prefs.version != rangePrefs) {
@@ -909,13 +914,12 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
                 rangeGeneration = Ui.generation;
                 rangePrefs = Prefs.version;
             }
-            float sw = Symbols.width(getContext(), symbol, 32 * k);
-            float width = sw + 12 * k + weatherPaint.measureText(now) + 18 * k + weatherDim.measureText(range);
-            float x = cx - width / 2;
-            Symbols.draw(getContext(), c, symbol, x + sw / 2, base - Ui.halfCap(weatherPaint), 32 * k, 0xC7FFFFFF);
+            float sw = Symbols.width(getContext(), symbol, 16 * k);
+            float x = x0;
+            Symbols.draw(getContext(), c, symbol, x + sw / 2, base - Ui.halfCap(weatherPaint), 16 * k, 0xE6FFFFFF);
             x += sw + 12 * k;
             c.drawText(now, x, base, weatherPaint);
-            x += weatherPaint.measureText(now) + 18 * k;
+            x += weatherPaint.measureText(now) + 10 * k;
             c.drawText(range, x, base, weatherDim);
         }
 

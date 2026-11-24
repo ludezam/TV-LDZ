@@ -36,7 +36,7 @@ final class CompanionApps {
         new App("Quadro LDZ", "Quadro-LDZ", "br.com.galeria.painel", "Quadro-LDZ",
             "749b6ef9bf363b1c45b602cacf83a64f81c863cf046f62c92757d91efd8e1471", "quadro"),
         new App("Tempo LDZ", "tempoLDZ", "br.com.ldz.tempotv", "Tempo-LDZ",
-            "e6002a730dde4cd2ff3011594409cce489fc042678c4e20051ea910990e8caa0", "tempo")
+            "02625d71f9422eb9bec6c4a9187f0b271758c981d64128896d56b59220c1c909", "tempo")
     };
     static final String ACTION = "io.freemytv.COMPANION_INSTALL";
     private static final ExecutorService WORK = Executors.newSingleThreadExecutor();
