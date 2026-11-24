@@ -4,6 +4,10 @@
 
 # Histórico de versões
 
+## 2.2.9
+- Reposiciona hora, data e clima da tela de descanso no canto inferior esquerdo, reduzindo o tamanho pela metade e reforçando a sombra localizada para melhorar a leitura.
+- Atualiza o certificado fixado do Tempo LDZ para corresponder ao APK público estável 1.5.0 no GitHub.
+
 ## 2.2.8
 - Refina a navegação e a apresentação do modo Fast: fundo preto sem imagem, animações desativadas e estado ativo identificado corretamente.
 - Ajusta o retorno à home ao abrir opções de conexão, preserva o contraste dos textos da tela inicial e remove o oval em torno da TV na marca dos Ajustes.

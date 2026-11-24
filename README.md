@@ -48,13 +48,18 @@ Em **Clima e horário**, a ilustração acompanha a condição do tempo e o per�
 
 ## Baixar
 
-- **Versão publicada atualmente: 2.2.8.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ, Quadro LDZ e Tempo LDZ continuam como aplicativos separados e também podem ser obtidos pela categoria **Outros Apps** nos Ajustes.
+- **Versão publicada atualmente: 2.2.9.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ, Quadro LDZ e Tempo LDZ continuam como aplicativos separados e também podem ser obtidos pela categoria **Outros Apps** nos Ajustes.
 - **Tempo LDZ:** [projeto, código e releases](https://github.com/ludezam/tempoLDZ), distribuído separadamente.
 - **Quadro LDZ:** [projeto, instruções e releases](https://github.com/ludezam/Quadro-LDZ), distribuído separadamente.
 
-O APK do TV LDZ contém apenas o launcher. Na categoria **Outros Apps**, cada card consulta a release estável mais recente do respectivo repositório, baixa o APK e pede ao Android para confirmar a instalação. O download é validado por tamanho, SHA-256, identificador e assinatura do app. O Tempo LDZ ainda não tinha uma release com APK quando esta versão foi preparada; o card informa isso e poderá encontrá-la quando for publicada.
+O APK do TV LDZ contém apenas o launcher. Na categoria **Outros Apps**, cada card consulta a release estável mais recente do respectivo repositório, baixa o APK e pede ao Android para confirmar a instalação. O download é validado por tamanho, SHA-256, identificador e assinatura do app. O Tempo LDZ 1.5.0 já possui uma release pública estável e pode ser instalado por esse card.
 
 O **Controle LDZ** continua sendo um aplicativo separado: instale-o na TV para abrir a página de controle pelo celular. A ponte de personalização permite ajustar fundo, desfoque, tela de descanso e fotos pela rede local. Seu APK e suas versões ficam no [repositório Controle LDZ](https://github.com/ludezam/Controle-LDZ).
+
+## Versão 2.2.9
+
+- Move hora, data e clima da tela de descanso para o canto inferior esquerdo, em escala reduzida e com sombra mais forte para facilitar a leitura.
+- Atualiza a assinatura permitida para baixar o Tempo LDZ; o card agora aceita o APK público estável 1.5.0.
 
 ## Versão 2.2.8
 
@@ -143,7 +148,7 @@ O build Android usa JDK 17, Android SDK com `platforms;android-34` e `build-tool
 ./build.sh --generic --custom
 ```
 
-O comando cria um APK genérico personalizado em `TV-LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. O atualizador da 2.2.8 também aceita o nome antigo, `FreeMyTV-LDZ.apk`, durante a transição. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
+O comando cria um APK genérico personalizado em `TV-LDZ.apk`. Para publicar uma atualização pelo menu, anexe-o à release com esse nome exato e assine-o com a chave privada de distribuição LDZ. O atualizador da 2.2.9 também aceita o nome antigo, `FreeMyTV-LDZ.apk`, durante a transição. **Nunca envie arquivos `.keystore` ou chaves privadas ao GitHub.**
 
 ## Créditos e licenças
 
