@@ -1,8 +1,45 @@
+## 2.2.21
+- Fix catalog refresh order so new Wikimedia filters can clear an old download cooldown.
+- Refine photo-only searches and metadata/color checks for text and monochrome results.
+
+## 2.2.20
+- Refine Wikimedia landscape selection: search specifically for photographs and filter text-related metadata, artwork and monochrome images more strictly.
+- Continue requesting 1920px thumbnails and display the bundled background during online loading.
+
+## 2.2.19
+- Remove NASA from online wallpaper rotation and use stricter Wikimedia Commons filters for text-bearing metadata and monochrome imagery.
+- Prefer Commons 1920px thumbnails and keep the bundled background visible while a download is pending.
+
+## 2.2.18
+- Removes Openverse and NASA as image providers; searches Wikimedia Commons only for landscapes and space photos under CC0/public-domain licenses.
+- Expands targeted searches and filters descriptions for people, text, maps, labels, diagrams and black-and-white terms; rejects nearly monochrome pixel data.
+- Shows a bundled image immediately while online content downloads, then replaces it when ready. Clears obsolete provider images and normalizes accepted downloads to 1920×1080.
+
+## 2.2.17
+- Displays a bundled landscape immediately while an online rotating image loads, then replaces it when the download is ready.
+- Replaces Openverse with Wikimedia Commons and NASA as image sources; accepted online photos are cached at exactly 1920×1080.
+
+## 2.2.16
+- Remove Openverse as an online image source. Fetch public-domain/CC0 landscape originals from Wikimedia Commons and space imagery from NASA Images API.
+- Validate downloaded file dimensions, reject thumbnails and crop accepted photos to 1920×1080 before caching. Keep the rotation schedule, bounded cache, prefetch, diagnostic logs and offline bundled fallback.
+
 ## 2.2.0
 
 - Added restricted Control LDZ integration for TV wallpaper, blur, screensaver background, and personal photo import.
 
 # Histórico de versões
+
+## 2.2.15
+- Requests the Openverse uncompressed full-size image endpoint; rejects falsely labelled low-resolution files, tries other catalog entries and normalizes saved images to 1920×1080.
+
+## 2.2.14
+- Adds diagnostic logs to the home wallpaper route, Openverse searches, filters, downloads, cache, and fallback.
+- Limits retries after an empty or failed catalog search to once every 15 minutes.
+
+## 2.2.13
+- Alternar paisagens oferece intervalos de 5 min, 30 min, 1 h e 4 h, aplicados na home e na tela de descanso.
+- Busca paisagens e astrofotografia horizontal em alta resolução no Openverse, limitando a seleção a fotografias CC0/domínio público e excluindo termos associados a cenas carregadas.
+- Mantém catálogo e imagens em cache local, pré-carrega a próxima paisagem e usa as imagens incluídas no app quando não há conexão ou a busca falha.
 
 ## 2.2.11
 - Em Aparência, permite escolher Fotos enviadas pelo Controle LDZ usando o próprio controle remoto da TV, além da seleção no celular.
@@ -100,3 +137,6 @@
 - Remove Destaques e opções relacionadas, Widget tocando agora, Minhas fotos e o desenho decorativo de Wi‑Fi.
 - Mantém somente o relógio no topo da tela inicial.
 - Preserva as preferências antigas sem apagar as fotos guardadas no aparelho.
+
+
+

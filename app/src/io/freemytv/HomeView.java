@@ -123,6 +123,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Backdrop customWallpaper;
     private String customWallpaperKey = "", customWallpaperRequested = "";
+    private boolean wallpaperRouteLogged;
     private final SharedPreferences ui;
     private final TvInputManager tvInputs;
     private final Spoken spoken = new Spoken(this, new Spoken.Source() {
@@ -3412,6 +3413,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             // No picks on screen: no cards, and the plain gradient behind, or with the clock your photo if there is one.
             if (!cards.isEmpty()) cards = new ArrayList<>();
             boolean own = clockMode() && Photos.on(getContext());
+            if (!wallpaperRouteLogged) {
+                AppLog.w("home background route: clock=" + clockMode() + " fast=" + Prefs.fastMode()
+                        + " custom=" + Config.CUSTOM_SKIN + " photos=" + own + " mode=" + Prefs.wallpaperMode());
+                wallpaperRouteLogged = true;
+            }
             Backdrop b = own ? Photos.backdrop(getContext(), ownReady) : null;
             if (!own && Config.CUSTOM_SKIN && clockMode()) {
                 Backdrop custom = customWallpaper();
@@ -3451,33 +3457,60 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Keeps one processed background in memory. Network and scene rendering run away from the drawing thread. */
     private Backdrop customWallpaper() {
-        if (Prefs.fastMode()) return null;
+        if (Prefs.fastMode()) {
+            AppLog.w("home background skipped: TV LDZ Fast is active");
+            return null;
+        }
         String mode = Prefs.wallpaperMode();
         boolean weather = mode.equals("weather");
         int code = data.weather.code;
         long now = System.currentTimeMillis(), sunrise = data.weather.sunrise, sunset = data.weather.sunset;
+        String landscape = mode;
+        long rotateInterval = Prefs.wallpaperRotationMillis();
+        long rotateSlot = now / rotateInterval;
+        if (mode.equals("rotate")) {
+            String[] landscapes = {"sunset", "forest", "snow", "beach"};
+            landscape = landscapes[(int) (rotateSlot % landscapes.length)];
+        }
         // The cached condition stays useful after standby; its isDay flag describes the old fetch time.
         // Resolve the current solar period locally so waking at night never waits for a network refresh.
         boolean day = !HomeData.isNight("auto", now, sunrise, sunset);
         String slot = weather ? Wallpapers.solarSlot(now, sunrise, sunset) : "";
-        String key = (weather ? "weather:" + code + ":" + day + ":" + slot : mode)
-                + (Prefs.wallpaperBlurred() ? ":blur" : ":sharp");
+        String key = weather ? "weather:" + code + ":" + day + ":" + slot
+                : mode.equals("rotate") ? "rotate:" + rotateInterval + ":" + rotateSlot : mode;
+        key += Prefs.wallpaperBlurred() ? ":blur" : ":sharp";
         if (key.equals(customWallpaperKey)) return customWallpaper;
         if (!key.equals(customWallpaperRequested)) {
             customWallpaperRequested = key;
+            AppLog.w("home background request: mode=" + mode + " key=" + key);
+            final String requestKey = key;
+            final String requestedLandscape = landscape;
             android.content.Context appContext = getContext().getApplicationContext();
             LOADER.execute(() -> {
                 Backdrop result = null;
                 try {
+                    if ("rotate".equals(mode)) {
+                        Backdrop placeholder = Wallpapers.landscape(appContext, requestedLandscape);
+                        final Backdrop localPlaceholder = placeholder;
+                        handler.post(() -> {
+                            if (!requestKey.equals(customWallpaperRequested) || customWallpaperKey.equals(requestKey)) return;
+                            if (customWallpaper == null && localPlaceholder != null) {
+                                AppLog.w("home background placeholder: bundled " + requestedLandscape + " shown while online image loads");
+                                customWallpaper = localPlaceholder;
+                                if (running) updatePicks();
+                            }
+                        });
+                    }
                     result = weather ? Wallpapers.weather(appContext, code, day, now, sunrise, sunset)
-                            : Wallpapers.landscape(appContext, mode);
+                            : "rotate".equals(mode) ? Wallpapers.rotatingLandscape(appContext, rotateSlot)
+                            : Wallpapers.landscape(appContext, requestedLandscape);
                 } catch (RuntimeException | OutOfMemoryError e) {
                     AppLog.w("custom wallpaper: " + e.getMessage());
                 }
                 final Backdrop ready = result;
                 handler.post(() -> {
-                    if (!key.equals(customWallpaperRequested)) return;
-                    customWallpaperKey = key;
+                    if (!requestKey.equals(customWallpaperRequested)) return;
+                    customWallpaperKey = requestKey;
                     if (ready != null) customWallpaper = ready;
                     if (running) updatePicks();
                 });

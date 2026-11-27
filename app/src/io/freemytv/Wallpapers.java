@@ -37,6 +37,21 @@ final class Wallpapers {
         return Backdrop.make(bitmap, true, true, Prefs.wallpaperBlurred());
     }
 
+    /** Online Wikimedia landscape, with a bundled landscape as the offline/network-failure fallback. */
+    static Backdrop rotatingLandscape(Context context, long slot) {
+        Bitmap bitmap = rotatingImage(context, slot);
+        return Backdrop.make(bitmap, true, true, Prefs.wallpaperBlurred());
+    }
+
+    /** Full-size image for the screensaver; network work is always called from its worker thread. */
+    static Bitmap rotatingImage(Context context, long slot) {
+        Bitmap bitmap = OnlineLandscapes.image(context, slot);
+        if (bitmap != null) return bitmap;
+        String[] fallback = {"sunset", "forest", "snow", "beach"};
+        Bitmap local = bundledImage(context, fallback[(int) Math.floorMod(slot, fallback.length)]);
+        return local != null ? local : bundledImage(context, "sunset");
+    }
+
     private static final long SUN_WINDOW_MS = 15 * 60_000L;
 
     /** "dawn" or "dusk" during the 15 minutes before/after the local solar event; otherwise empty. */

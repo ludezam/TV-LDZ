@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "version": "2.2.12",
-  "tag": "v2.2.12",
+  "version": "2.2.21",
+  "tag": "v2.2.21",
   "apk": "TV-LDZ.apk",
-  "size": 22854603,
-  "sha256": "69f48d2c264b59f4bf1022ff26e68a4f75f30fab7c927d9987c0df882cfe589b",
+  "size": 22866891,
+  "sha256": "257aabdbdb2376d12f4c57f5ce8da0b485984e592a00461ca92c82aa9b6200b5",
   "package": "io.freemytv"
 }
