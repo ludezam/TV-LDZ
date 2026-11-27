@@ -4,6 +4,11 @@
 
 # Histórico de versões
 
+## 2.2.11
+- Em Aparência, permite escolher Fotos enviadas pelo Controle LDZ usando o próprio controle remoto da TV, além da seleção no celular.
+- Adiciona Alternar paisagens para o fundo inicial e para a tela de descanso.
+- Reforça a sombra localizada das informações do descanso e ajusta data e clima para acompanhar a largura da hora.
+
 ## 2.2.9
 - Reposiciona hora, data e clima da tela de descanso no canto inferior esquerdo, reduzindo o tamanho pela metade e reforçando a sombra localizada para melhorar a leitura.
 - Atualiza o certificado fixado do Tempo LDZ para corresponder ao APK público estável 1.5.0 no GitHub.
