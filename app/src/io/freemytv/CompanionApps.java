@@ -11,7 +11,6 @@ import android.os.Build;
 import android.provider.Settings;
 import android.net.Uri;
 import android.widget.Toast;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -86,48 +85,41 @@ final class CompanionApps {
         }
     }
 
-    /** Reject ambiguous variants, source archives, other projects and metadata without a verified digest. */
-    static JSONObject selectAsset(App app, JSONArray assets) throws Exception {
-        JSONObject selected=null;
-        for (int i=0;assets!=null && i<assets.length();i++) {
-            JSONObject asset=assets.optJSONObject(i);
-            if (asset==null) continue;
-            String name=asset.optString("name");
-            if (!name.startsWith(app.prefix) || !name.endsWith(".apk")) continue;
-            if (selected!=null) throw new IOException("Ambiguous APK variants");
-            selected=asset;
-        }
-        return selected;
-    }
-
     private static void fetch(Context c,int index) {
         App app=APPS[index]; File part=new File(file(c,index)+".part");
         try {
-            HttpURLConnection api=open("https://api.github.com/repos/ludezam/"+app.repo+"/releases/latest");
-            JSONObject release;
+            String manifestUrl="https://raw.githubusercontent.com/ludezam/"+app.repo+"/main/update.json?t="+System.currentTimeMillis();
+            HttpURLConnection manifestConnection=open(manifestUrl);
+            JSONObject manifest;
             try {
-                int status=api.getResponseCode();
+                manifestConnection.setRequestProperty("Cache-Control","no-cache, no-store");
+                manifestConnection.setRequestProperty("Pragma","no-cache");
+                int status=manifestConnection.getResponseCode();
                 if(status==404) { app.state="unavailable"; return; }
-                if(status!=200) throw new IOException("GitHub HTTP "+status);
+                if(status!=200) throw new IOException("Manifest HTTP "+status);
                 ByteArrayOutputStream bytes=new ByteArrayOutputStream();
-                try(InputStream input=api.getInputStream()) {
+                try(InputStream input=manifestConnection.getInputStream()) {
                     byte[] buffer=new byte[8192]; int n;
                     while((n=input.read(buffer))!=-1) {
-                        if(bytes.size()+n>2*1024*1024) throw new IOException("Release metadata too large");
+                        if(bytes.size()+n>16*1024) throw new IOException("Update manifest too large");
                         bytes.write(buffer,0,n);
                     }
                 }
-                release=new JSONObject(bytes.toString("UTF-8"));
-            } finally { api.disconnect(); }
-            if(release.optBoolean("draft") || release.optBoolean("prerelease")) throw new IOException("Not a stable release");
-            JSONObject asset=selectAsset(app,release.optJSONArray("assets"));
-            if(asset==null) { app.state="unavailable"; return; }
-            app.version=release.optString("tag_name").replaceFirst("^[vV]", "");
-            String url=asset.optString("browser_download_url"), digest=asset.optString("digest");
-            long size=asset.optLong("size");
-            if(!url.startsWith("https://github.com/ludezam/"+app.repo+"/releases/download/")
-                    || !digest.matches("sha256:[0-9a-fA-F]{64}") || size<=0 || size>MAX_APK)
-                throw new IOException("Unexpected APK metadata");
+                manifest=new JSONObject(bytes.toString("UTF-8"));
+            } finally { manifestConnection.disconnect(); }
+            if(manifest.optInt("schema")!=1) throw new IOException("Unsupported update manifest schema");
+            app.version=manifest.optString("version").replaceFirst("^[vV]", "");
+            String tag=manifest.optString("tag"), assetName=manifest.optString("apk");
+            String digest=manifest.optString("sha256").toLowerCase(java.util.Locale.ROOT);
+            long size=manifest.optLong("size");
+            if(app.version.isEmpty() || !tag.matches("v?[0-9]+(?:\\.[0-9]+){1,3}")
+                    || !tag.replaceFirst("^[vV]", "").equals(app.version)
+                    || !app.pkg.equals(manifest.optString("package"))
+                    || !assetName.startsWith(app.prefix) || !assetName.endsWith(".apk")
+                    || assetName.contains("/") || assetName.indexOf('\\') >= 0 || assetName.contains("..")
+                    || !digest.matches("[0-9a-f]{64}") || size<=0 || size>MAX_APK)
+                throw new IOException("Invalid update manifest for "+app.name);
+            String url="https://github.com/ludezam/"+app.repo+"/releases/download/"+tag+"/"+assetName;
             try {
                 PackageInfo installed=c.getPackageManager().getPackageInfo(app.pkg,0);
                 if(app.version.equals(installed.versionName)) { app.state="current"; return; }
@@ -145,7 +137,7 @@ final class CompanionApps {
                         output.write(buffer,0,n); sha.update(buffer,0,n); app.progress=(int)(total*100/size);
                     }
                 }
-                if(total!=size || !hex(sha.digest()).equalsIgnoreCase(digest.substring(7))) throw new IOException("APK digest mismatch");
+                if(total!=size || !hex(sha.digest()).equalsIgnoreCase(digest)) throw new IOException("APK digest mismatch");
             } finally { connection.disconnect(); }
             validate(c,app,part);
             File apk=file(c,index); if(apk.exists() && !apk.delete()) throw new IOException("Cannot replace cached APK");
