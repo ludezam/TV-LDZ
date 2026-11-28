@@ -16,7 +16,7 @@ O código está em [`demo.html`](demo.html) e reutiliza as imagens e a fonte de 
 
 ## Capturas de tela
 
-Capturas reais da versão **2.2.8** em uma TV TCL com Android TV. Para explorar os menus mais recentes, abra a demonstração acima.
+Capturas reais da versão **2.2.21**, feitas em 28/11/2026 em uma TV TCL com Android TV. Para explorar os menus mais recentes, abra a demonstração acima.
 
 <table>
   <tr>
