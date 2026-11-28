@@ -16,7 +16,7 @@ O código está em [`demo.html`](demo.html) e reutiliza as imagens e a fonte de 
 
 ## Capturas de tela
 
-Capturas reais da versão **2.2.8** em uma TV TCL com Android TV. Use as setas do controle para navegar pelas categorias do menu.
+Capturas reais da versão **2.2.8** em uma TV TCL com Android TV. Para explorar os menus mais recentes, abra a demonstração acima.
 
 <table>
   <tr>
@@ -39,16 +39,13 @@ Capturas reais da versão **2.2.8** em uma TV TCL com Android TV. Use as setas d
 
 ## Opções de tela de fundo e de descanso
 
-As escolhas do fundo da **Tela inicial** e da **Tela de descanso** são independentes:
+Você pode escolher os fundos da **Tela inicial** e da **Tela de descanso** de forma independente. As opções incluem paisagens embutidas, fotos enviadas pelo Controle LDZ e **Clima e horário**, que usa ilustrações de acordo com a previsão e o período do dia. No descanso, **Usar o fundo do Início** reaproveita a escolha da tela inicial.
 
-- **Tela inicial:** Paisagem do pôr do sol, Montanhas e florestas verdes, Montanhas nevadas, Praia ou Clima e horário.
-- **Tela de descanso:** oferece as mesmas cinco opções, além de **Usar o fundo do Início** e **Alternar paisagens**. A primeira acompanha a escolha da Tela inicial; a segunda alterna entre as quatro paisagens a cada 30 segundos.
-
-Em **Clima e horário**, a ilustração acompanha a condição do tempo e o período do dia. Há imagens próprias para os 15 minutos antes e depois do nascer e do pôr do sol. As paisagens ficam incluídas no APK; a opção de clima precisa dos dados meteorológicos para acompanhar o tempo atual.
+Em **Alternar paisagens**, o app busca fotografias de paisagens e do espaço no Wikimedia Commons. Enquanto uma imagem carrega, ou se a rede falhar, ele usa as paisagens que já vêm no app. Na demo, a rotação usa apenas essas imagens locais.
 
 ## Baixar
 
-- **Versão publicada atualmente: 2.2.12.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ, Quadro LDZ e Tempo LDZ continuam como aplicativos separados e também podem ser obtidos pela categoria **Outros Apps** nos Ajustes.
+- **Versão publicada: 2.2.21.** Baixe o APK nos [Releases](https://github.com/ludezam/TV-LDZ/releases/latest). O Controle LDZ, Quadro LDZ e Tempo LDZ continuam como aplicativos separados e também podem ser obtidos pela categoria **Outros Apps** nos Ajustes.
 - **Tempo LDZ:** [projeto, código e releases](https://github.com/ludezam/tempoLDZ), distribuído separadamente.
 - **Quadro LDZ:** [projeto, instruções e releases](https://github.com/ludezam/Quadro-LDZ), distribuído separadamente.
 
@@ -60,7 +57,13 @@ O **Controle LDZ** é instalado como aplicativo separado e pode ser baixado dire
 
 O TV LDZ e os cards de Outros Apps consultam arquivos JSON públicos em `raw.githubusercontent.com`, em vez da API de releases do GitHub, cuja cota sem autenticação é compartilhada por endereço IP. Cada projeto mantém um `update.json` na raiz do branch principal e o atualiza junto com cada release, com versão, tag, nome do APK, tamanho, SHA-256 e identificador do pacote. Gere os valores com `tools/Write-UpdateManifest.ps1`; publique o arquivo no branch principal antes ou junto da release. Veja o [guia de manifestos](docs/update-manifests.md). Os cards consultam os manifestos de Controle LDZ, Quadro LDZ e Tempo LDZ em seus próprios repositórios.
 
-Instalações TV LDZ 2.2.11 e anteriores usam o mecanismo atual para receber a 2.2.12. Depois da atualização, as consultas seguintes usam `update.json`.
+A partir da versão 2.2.12, as consultas usam `update.json`.
+
+## Versão 2.2.21
+
+- Melhora a seleção de fotografias para o fundo rotativo do Wikimedia Commons e a renovação do catálogo após pausas nas consultas.
+- Usa uma paisagem embutida até que a foto online esteja pronta.
+- Veja as outras mudanças no [histórico de versões](CHANGELOG.md).
 
 ## Versão 2.2.12
 
